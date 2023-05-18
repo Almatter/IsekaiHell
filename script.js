@@ -41,8 +41,7 @@ $(document).ready(function() {
 // function to calculate points
 function calculatePoints() {
     var points = 0;
-    // add earned points
-    points += parseInt($('#earned-points').val()) || 0;
+    
     // add skill points
     $('.skill-grade').each(function() {
         points += parseInt($(this).val()) || 0;
@@ -61,7 +60,7 @@ function calculatePoints() {
     });
     // update points
     $('#point-value').text(points);
-    var earnedpoints = parseInt($('#earned-points').val());
+    var earnedpoints = (parseInt($('#earned-points').val()) || 0);
     // check if over limit
     if (points > (105+earnedpoints)) {
         $('#points').css('color', 'red');

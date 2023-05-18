@@ -4,7 +4,7 @@ $(document).ready(function() {
     // populate select options
     $('.stat-grade').each(function() {
         for (var i = 0; i < grades.length; i++) {
-            $(this).append('<option value="'+i+'">'+grades[i]+'</option>');
+            $(this).append('<option value="'+(i*7)+'">'+grades[i]+'</option>');
         }
     });
 
@@ -17,7 +17,7 @@ $(document).ready(function() {
         $('.skill-grade').each(function() {
             if ($(this).children().length == 0) {
                 for (var i = 0; i < grades.length; i++) {
-                    $(this).append('<option value="'+i+'">'+grades[i]+'</option>');
+                    $(this).append('<option value="'+(i*7)+'">'+grades[i]+'</option>');
                 }
             }
         });
@@ -30,7 +30,7 @@ $(document).ready(function() {
         $('.equipment-grade').each(function() {
           if ($(this).children().length == 0) {
             for (var i = 0; i < grades.length; i++) {
-              $(this).append('<option value="'+i+'">'+grades[i]+'</option>');
+              $(this).append('<option value="'+(i*7)+'">'+grades[i]+'</option>');
             }
           }
         });

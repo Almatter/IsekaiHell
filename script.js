@@ -40,32 +40,32 @@ $(document).ready(function() {
 
 // function to calculate points
 function calculatePoints() {
-var points = 0;
-// add earned points
-points += parseInt($('#earned-points').val()) || 0;
-// add skill points
-$('.skill-grade').each(function() {
-points += parseInt($(this).val()) || 0;
-});
-// add stat points
-$('.stat-grade').each(function() {
-points += parseInt($(this).val()) || 0;
-});
-// add equipment points
-$('.equipment').each(function() {
-if ($(this).find('.manual-input').is(':checked')) {
-points += parseInt($(this).find('.base-price').val()) || 0;
-} else {
-points += parseInt($(this).find('.equipment-grade').val()) || 0;
-}
-});
-// update points
-$('#point-value').text(points);
-// check if over limit
-if (points > 100) {
-$('#points').css('color', 'red');
-alert('Points exceed limit!');
-} else {
-$('#points').css('color', '#ddd');
-}
+    var points = 0;
+    // add earned points
+    points += parseInt($('#earned-points').val()) || 0;
+    // add skill points
+    $('.skill-grade').each(function() {
+        points += parseInt($(this).val()) || 0;
+    });
+    // add stat points
+    $('.stat-grade').each(function() {
+        points += parseInt($(this).val()) || 0;
+    });
+    // add equipment points
+    $('.equipment').each(function() {
+        if ($(this).find('.manual-input').is(':checked')) {
+            points += parseInt($(this).find('.base-price').val()) || 0;
+        } else {
+            points += parseInt($(this).find('.equipment-grade').val()) || 0;
+        }
+    });
+    // update points
+    $('#point-value').text(points);
+    // check if over limit
+    if (points > 105) {
+        $('#points').css('color', 'red');
+        alert('Points exceed limit!');
+    } else {
+        $('#points').css('color', '#ddd');
+    }
 }

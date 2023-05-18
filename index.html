@@ -1,1 +1,33 @@
-hey world
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+    <h1>Character Sheet</h1>
+    <div id="points">Points: <span id="point-value">0</span></div>
+    <div>
+        <label for="earned-points">Earned Points:</label>
+        <input type="number" id="earned-points" name="earned-points">
+    </div>
+    <div id="skills">
+        <h2>Skills</h2>
+        <button id="add-skill">Add Skill</button>
+    </div>
+    <div id="stats">
+        <h2>Stats</h2>
+        <div>Strength: <select class="stat-grade"></select></div>
+        <div>Precision: <select class="stat-grade"></select></div>
+        <div>Intelligence: <select class="stat-grade"></select></div>
+        <div>Vitality: <select class="stat-grade"></select></div>
+        <div>Speed: <select class="stat-grade"></select></div>
+    </div>
+    <div id="equipment">
+        <h2>Equipment</h2>
+        <button id="add-equipment">Add Equipment</button>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+

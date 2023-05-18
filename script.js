@@ -61,8 +61,9 @@ function calculatePoints() {
     });
     // update points
     $('#point-value').text(points);
+    var earnedpoints = parseInt($('#earned-points').val());
     // check if over limit
-    if (points > 105) {
+    if (points > (105+earnedpoints)) {
         $('#points').css('color', 'red');
         alert('Points exceed limit!');
     } else {

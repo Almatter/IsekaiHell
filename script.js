@@ -1,10 +1,14 @@
 $(document).ready(function() {
     // array of grades
     var grades = ['F','E', 'D', 'C', 'B', 'A', 'S'];
+    var statgrades = ['H','G','F','E', 'D', 'C', 'B', 'A', 'S'];
     // populate select options
+    
     $('.stat-grade').each(function() {
-        for (var i = 0; i < grades.length; i++) {
-            $(this).append('<option value="'+(i*7)+'">'+grades[i]+'</option>');
+        var step = -2;
+        for (var i = 0; i < statgrades.length; i++) {
+            $(this).append('<option value="'+(step*7)+'">'+statgrades[i]+'</option>');
+            ++step;
         }
     });
 

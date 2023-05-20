@@ -7,7 +7,12 @@ $(document).ready(function() {
     $('.stat-grade').each(function() {
         var step = -2;
         for (var i = 0; i < statgrades.length; i++) {
-            $(this).append('<option value="'+(step*7)+'">'+statgrades[i]+'</option>');
+            if((step*7) == 0){
+                $(this).append('<option value="'+(step*7)+'" selected>'+statgrades[i]+'</option>');
+            } else {
+                $(this).append('<option value="'+(step*7)+'">'+statgrades[i]+'</option>');
+            }
+            
             ++step;
         }
     });

@@ -1,7 +1,25 @@
 body {
-    background-color: #1a1a1a;
+    background-color: #313338;
     color: #ddd;
     font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+#toggle-theme-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 5px 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.red-text {
+    color: rgb(200, 0, 0); /* Red color for "Points spent" */
+}
+
+.green-text {
+    color: rgb(0, 200, 0); /* Green color for "Points remaining" */
 }
 
 #points {
@@ -11,4 +29,30 @@ body {
 
 input[type="number"] {
     width: 60px;
+}
+
+#bannerimage {
+    width: 100%;
+    background-image: url(https://www.rpnation.com/data/avatars/l/93/93653.jpg?1635370928);
+    height: 405px;
+    background-color: purple;
+    background-position: center;
+}
+
+.remove-button {
+    background-color: #ab0000;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+.remove-button:hover {
+    background-color: #4c0000;
+}
+
+.skill-list {
+    margin-bottom: 20px; /* Add space below the skill list */
+}
+.fighting-style-header {
+    margin-top: 20px; /* Add space above each fighting style header */
 }

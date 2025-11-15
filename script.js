@@ -317,7 +317,8 @@ $(document).ready(function() {
     $(function () {
     // Use the *export* endpoint, not the edit link
     var docUrl = "https://docs.google.com/document/d/1Mx7LjTHszhYawiwUfOZEK-8XgoUv1NDBZRxs9lNUY-E/export?format=txt";
-
+    $("#loading").show();
+        
     $.ajax({
         url: docUrl,
         method: "GET",
@@ -325,11 +326,16 @@ $(document).ready(function() {
             // The document text is now in `data`
             console.log("Loaded doc text:", data);
             docText = data;
+            
             // Example: place into the page
             $("#output").text("Loaded");
         },
         error: function(e) {
+            $("#output").text("Failed to load");
             console.error("Error fetching doc:", e);
+        },
+        complete: function(){
+            $("#loading").hide();
         }
     });
 });
@@ -348,7 +354,7 @@ $(document).ready(function() {
         var selected = $(this).val(); // example: "jumping"
         var chunk = getChunk(selected, docText);
         chunk = chunk.replace(/_/g, "");
-        $("#skill-description").html("<h3>" + selected + "</h3>" + "<br>" + chunk + "<br>");
+        $("#skill-description").html("<h3>" + selected + "</h3>" + chunk + "<br>");
     });
 
     function getChunk(tag, doc) {

@@ -313,6 +313,27 @@ $(document).ready(function() {
         calculatePoints();
     });
 
+    var docText = "";
+    $(function () {
+    // Use the *export* endpoint, not the edit link
+    var docUrl = "https://docs.google.com/document/d/1Mx7LjTHszhYawiwUfOZEK-8XgoUv1NDBZRxs9lNUY-E/export?format=txt";
+
+    $.ajax({
+        url: docUrl,
+        method: "GET",
+        success: function(data) {
+            // The document text is now in `data`
+            console.log("Loaded doc text:", data);
+            docText = data;
+            // Example: place into the page
+            $("#output").text("Loaded");
+        },
+        error: function(e) {
+            console.error("Error fetching doc:", e);
+        }
+    });
+});
+
     $('.remove-technique').click(function() {
         $(this).parent().remove();
         calculatePoints();

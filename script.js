@@ -357,7 +357,7 @@ $(document).ready(function() {
 
     // Find starting position
     var start = doc.indexOf(searchTag);
-    if (start === -1) return "No entry found for " + searchTag;
+    if (start === -1) return "";
 
     // Start of content = end of tag line
     start = doc.indexOf("\n", start);

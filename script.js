@@ -348,7 +348,7 @@ $(document).ready(function() {
         var selected = $(this).val(); // example: "jumping"
         var chunk = getChunk(selected, docText);
         chunk = chunk.replace(/_/g, "");
-        $("#skill-description").text(chunk);
+        $("#skill-description").text(selected + "<br>" + chunk);
     });
 
     function getChunk(tag, doc) {

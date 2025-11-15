@@ -322,6 +322,37 @@ $(document).ready(function() {
         calculatePoints();
     });
 
+     $("#skill-select").on("change", function () {
+        // the text of the selected <option>
+        var selected = $(this).val(); // example: "jumping"
+        var chunk = getChunk(selected, docText);
+
+        $("#skill-description").text(chunk);
+    });
+
+    function getChunk(tag, doc) {
+    // Create "#jumping"
+    var searchTag = "#" + tag;
+
+    // Find starting position
+    var start = doc.indexOf(searchTag);
+    if (start === -1) return "No entry found for " + searchTag;
+
+    // Start of content = end of tag line
+    start = doc.indexOf("\n", start);
+    if (start === -1) start = doc.length;
+
+    // Find next tag beginning with "#"
+    // Using regex to find the NEXT "#something"
+    var nextTagRegex = /\n#/g;
+    nextTagRegex.lastIndex = start;
+
+    var nextMatch = nextTagRegex.exec(doc);
+    var end = nextMatch ? nextMatch.index : doc.length;
+
+    // Extract and trim
+    return doc.substring(start, end).trim();
+}
 
 
     // add skill

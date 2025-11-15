@@ -69,5 +69,30 @@
     <script src="script.js"></script>
 
 
+    <script>
+$(function () {
+    // Use the *export* endpoint, not the edit link
+    var docUrl = "https://docs.google.com/document/d/1Mx7LjTHszhYawiwUfOZEK-8XgoUv1NDBZRxs9lNUY-E/export?format=txt";
+
+    $.ajax({
+        url: docUrl,
+        method: "GET",
+        success: function(data) {
+            // The document text is now in `data`
+            console.log("Loaded doc text:", data);
+
+            // Example: place into the page
+            $("#output").text(data);
+        },
+        error: function(e) {
+            console.error("Error fetching doc:", e);
+        }
+    });
+});
+</script>
+
+<div id="output" style="white-space: pre-wrap;"></div>
+
+
 
 </body></html>

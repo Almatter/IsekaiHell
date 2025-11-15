@@ -347,7 +347,7 @@ $(document).ready(function() {
         // the text of the selected <option>
         var selected = $(this).val(); // example: "jumping"
         var chunk = getChunk(selected, docText);
-
+        chunk = chunk.replace(/_/g, "");
         $("#skill-description").text(chunk);
     });
 

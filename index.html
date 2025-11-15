@@ -5,6 +5,18 @@
 <body>
     <!--<div id="bannerimage"></div>-->
     <h1>Character Sheet</h1>
+
+    <div id="loading" style="
+    display: none;
+    text-align: center;
+    padding: 10px;
+">
+    <img src="https://media.tenor.com/khzZ7-YSJW4AAAAM/cargando.gif" 
+         alt="Loading..."
+         style="width: 40px; height: 40px; display: none; margin: 0 auto;">
+    <div style="font-size: 14px; margin-top: 5px;">Loading…</div>
+</div>
+    
     <div id="points">Points spent: <span id="point-value" class="red-text">0</span> Points remaining: <span id="point-remaining" class="green-text">0</span></div>
     <div>
         <label for="earned-points">Earned Points:</label>
@@ -69,7 +81,7 @@
         <h4>Last update: standing grade + skills</h4>
     </div>
     <script src="jquery.min.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=2"></script>
 
 
    

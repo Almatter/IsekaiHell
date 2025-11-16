@@ -387,12 +387,12 @@ $(document).ready(function() {
 }
 
     function getChunkHtml(tag) {
-    if (!docHtml) return "Document not loaded yet.";
+    if (!docText) return "Document not loaded yet.";
 
     var searchTag = "#" + tag.toLowerCase();
 
     // Create a detached DOM from the doc HTML
-    var $container = $("<div>").html(docHtml);
+    var $container = $("<div>").html(docText);
 
     // Find the element whose text starts with "#tag" (case-insensitive)
     var $blocks = $container.find("p, h1, h2, h3, h4, h5, h6, div"); // adjust as needed

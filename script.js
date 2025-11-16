@@ -316,7 +316,7 @@ $(document).ready(function() {
     var docText = "";
     $(function () {
     // Use the *export* endpoint, not the edit link
-    var docUrl = "https://docs.google.com/document/d/1Mx7LjTHszhYawiwUfOZEK-8XgoUv1NDBZRxs9lNUY-E/export?format=txt";
+    var docUrl = "https://docs.google.com/document/d/1Mx7LjTHszhYawiwUfOZEK-8XgoUv1NDBZRxs9lNUY-E/export?format=html";
     $("#loading").show();
         
     $.ajax({

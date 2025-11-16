@@ -352,9 +352,14 @@ $(document).ready(function() {
      $("#skill-select").on("change", function () {
         // the text of the selected <option>
         var selected = $(this).val(); // example: "jumping"
-        var chunk = getChunk(selected, docText);
-        chunk = chunk.replace(/_/g, "");
-        $("#skill-description").html("<h3>" + selected + "</h3>" + chunk + "<br>");
+        //var chunk = getChunk(selected, docText);
+        //chunk = chunk.replace(/_/g, "");
+        //$("#skill-description").html("<h3>" + selected + "</h3>" + chunk + "<br>");
+
+         var chunkHtml = getChunkHtml(selected);
+
+        // IMPORTANT: use .html(), not .text(), so formatting is preserved
+        $("#skill-description").html(chunkHtml);
     });
 
     function getChunk(tag, doc) {
@@ -379,6 +384,56 @@ $(document).ready(function() {
 
     // Extract and trim
     return doc.substring(start, end).trim();
+}
+
+    function getChunkHtml(tag) {
+    if (!docHtml) return "Document not loaded yet.";
+
+    var searchTag = "#" + tag.toLowerCase();
+
+    // Create a detached DOM from the doc HTML
+    var $container = $("<div>").html(docHtml);
+
+    // Find the element whose text starts with "#tag" (case-insensitive)
+    var $blocks = $container.find("p, h1, h2, h3, h4, h5, h6, div"); // adjust as needed
+    var $start = null;
+
+    $blocks.each(function () {
+        var text = $(this).text().trim().toLowerCase();
+        if (text.indexOf(searchTag) === 0) { // starts with "#tag"
+            $start = $(this);
+            return false; // break .each
+        }
+    });
+
+    if (!$start) {
+        return "No entry found for " + searchTag;
+    }
+
+    // Collect HTML from after the tag line up to the next "#..."
+    var parts = [];
+    var $node = $start.next();
+
+    while ($node.length) {
+        var text = $node.text().trim();
+
+        // stop when we hit another line that starts with "#"
+        if (text.startsWith("#")) break;
+
+        parts.push($node.prop("outerHTML"));
+        $node = $node.next();
+    }
+
+    // If you also want the heading line itself included, uncomment:
+    // parts.unshift($start.prop("outerHTML"));
+
+    // Join into a single HTML string
+    var htmlChunk = parts.join("");
+
+    // Remove underscores if you still want that behavior
+    htmlChunk = htmlChunk.replace(/_/g, "");
+
+    return htmlChunk;
 }
 
 

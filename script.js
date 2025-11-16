@@ -425,7 +425,7 @@ $(document).ready(function() {
     }
 
     // If you also want the heading line itself included, uncomment:
-    // parts.unshift($start.prop("outerHTML"));
+     parts.unshift($start.prop("outerHTML"));
 
     // Join into a single HTML string
     var htmlChunk = parts.join("");

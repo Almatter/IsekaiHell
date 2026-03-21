@@ -414,6 +414,9 @@ $(document).ready(function() {
 
     // Extract and trim
     return doc.substring(start, end).trim();
+
+        //initialize titles
+        renderTitles();
 }
 
     function getChunkHtml(tag) {

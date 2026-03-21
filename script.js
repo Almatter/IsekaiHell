@@ -21,6 +21,36 @@ $(document).ready(function() {
         { name: 'Heavy armor', statDependency: 'Vitality'}
     ];
 
+     const titleOptions = [
+    {
+      value: "Prime",
+      label: "Prime",
+      description: "Balanced mortal lineage with broad access and adaptability."
+    },
+    {
+      value: "Fae",
+      label: "Fae",
+      description: "Mystic nature tied lineage with magical and otherworldly traits."
+    },
+    {
+      value: "Beast",
+      label: "Beast",
+      description: "Bestial lineage focused on instinct, physicality, and animal traits."
+    },
+    {
+      value: "Construct",
+      label: "Construct",
+      description: "Artificial or forged being with mechanical or unnatural durability."
+    },
+    {
+      value: "Monster",
+      label: "Monster",
+      description: "Monstrous lineage with unusual biology and fearsome traits."
+    }
+  ];
+
+     const titlesContainer = document.getElementById("titlesContainer");
+
     var skillTypes = [
         { name: '<----------------------Movement---------------------->', statDependency: ' ', gradeValues: gradeValues, textInput: false },
         { name: 'AfterImage', statDependency: 'Speed', gradeValues: gradeValues3, textInput: false},
@@ -934,7 +964,8 @@ $(document).ready(function() {
     // function to calculate points
 function calculatePoints() {
     var points = 0;
-    
+    // add title points
+    points += getExtraTitleCost();
     // add skill points
     $('.skill-grade').each(function() {
         points += parseInt($(this).val()) || 0;
@@ -1023,6 +1054,100 @@ function updateEquipmentCost(equipmentRow) {
 
     equipmentRow.find('.equipment-cost').text(cost);
 }
+
+// Keeps current selected title chain in order
+  let selectedTitles = [""];
+
+  function renderTitles() {
+    titlesContainer.innerHTML = "";
+
+    for (let i = 0; i < selectedTitles.length; i++) {
+      const row = document.createElement("div");
+      row.className = "title-row";
+
+      const label = document.createElement("label");
+      label.setAttribute("for", `title-${i}`);
+      label.textContent = i === 0 ? "Title" : `Additional Title ${i + 1}`;
+      row.appendChild(label);
+
+      const select = document.createElement("select");
+      select.id = `title-${i}`;
+      select.dataset.index = i;
+
+      const defaultOption = document.createElement("option");
+      defaultOption.value = "";
+      defaultOption.textContent = "-- Select a Title --";
+      select.appendChild(defaultOption);
+
+      // Exclude already chosen titles, except for the current selection in this slot
+      const usedBefore = selectedTitles.slice(0, i);
+
+      titleOptions.forEach(option => {
+        if (!usedBefore.includes(option.value)) {
+          const opt = document.createElement("option");
+          opt.value = option.value;
+          opt.textContent = `${option.label} - ${option.description}`;
+          if (selectedTitles[i] === option.value) {
+            opt.selected = true;
+          }
+          select.appendChild(opt);
+        }
+      });
+
+      select.addEventListener("change", handleTitleChange);
+      row.appendChild(select);
+
+      const note = document.createElement("div");
+      note.className = "title-note";
+      note.textContent = i === 0 ? "First title is included." : "Extra title: +7 pts";
+      row.appendChild(note);
+
+      // Show chosen title description below select
+      const current = titleOptions.find(t => t.value === selectedTitles[i]);
+      if (current) {
+        const desc = document.createElement("span");
+        desc.className = "title-description";
+        desc.textContent = current.description;
+        row.appendChild(desc);
+      }
+
+      titlesContainer.appendChild(row);
+    }
+  }
+
+function handleTitleChange(e) {
+    const index = parseInt(e.target.dataset.index, 10);
+    const value = e.target.value;
+
+    // Set current selection
+    selectedTitles[index] = value;
+
+    // Remove every title after the one changed
+    selectedTitles = selectedTitles.slice(0, index + 1);
+
+    // If a valid title was chosen and there are still unused options, add next dropdown
+    if (value) {
+      const used = selectedTitles.filter(Boolean);
+      const remaining = titleOptions.filter(t => !used.includes(t.value));
+
+      if (remaining.length > 0) {
+        selectedTitles.push("");
+      }
+    }
+
+    renderTitles();
+    calculatePoints();
+  }
+
+ function getExtraTitleCost() {
+    const chosenCount = selectedTitles.filter(Boolean).length;
+    return Math.max(0, chosenCount - 1) * 7;
+  }
+
+  function getSelectedTitles() {
+    return selectedTitles.filter(Boolean);
+  }
+
 
 document.getElementById("toggle-theme-button").addEventListener("click", function () {
     const body = document.body;

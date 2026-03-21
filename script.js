@@ -54,7 +54,7 @@ $(document).ready(function() {
  //title logic
   populateTitleDropdown();
     renderSelectedTitles();
-    calculatePoints();
+
 
     $("#titleSelect").on("change", function () {
       updateSelectedDescription();

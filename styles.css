@@ -56,3 +56,39 @@ input[type="number"] {
 .fighting-style-header {
     margin-top: 20px; /* Add space above each fighting style header */
 }
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.title-row {
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #f9f9f9;
+}
+
+.title-row label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.title-row select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 6px;
+}
+
+.title-note {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.title-description {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.9rem;
+  color: #444;
+}

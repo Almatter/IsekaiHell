@@ -51,6 +51,24 @@ $(document).ready(function() {
         { name: 'Heavy armor', statDependency: 'Vitality'}
     ];
 
+ //title logic
+  populateTitleDropdown();
+    renderSelectedTitles();
+    calculatePoints();
+
+    $("#titleSelect").on("change", function () {
+      updateSelectedDescription();
+      $("#addTitleBtn").prop("disabled", !$(this).val());
+    });
+
+    $("#addTitleBtn").on("click", function () {
+      addTitle();
+    });
+
+    $("#selectedTitlesContainer").on("click", ".remove-title-btn", function () {
+      const value = $(this).closest(".selected-title-item").data("title");
+      removeTitle(value);
+    });
     
 
     var skillTypes = [

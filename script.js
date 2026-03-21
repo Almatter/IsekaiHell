@@ -1,27 +1,4 @@
-$(document).ready(function() {
-    // array of grades
-    var grades = ['F','E', 'D', 'C', 'B', 'A', 'S'];
-    var gradeValues = [7, 14, 21, 28, 35, 42, 49];
-    var gradeValues2 = [14, 28, 42, 56, 70, 84, 98];
-    var gradeValues3 = [21, 42, 63, 84, 105, 126, 147];
-    var gradeValues4 = [28, 56, 84, 112, 140, 168, 196];
-    var gradeValues5 = [35, 70, 105, 140, 175, 210, 245];
-    var gradeValues6 = [56, 112, 168, 224, 280, 336, 392];
-    var gradeValues7 = [70, 140, 210, 280, 350, 420, 490];
-    var gradeValues8 = [42, 84, 126, 168, 210, 252, 294];
-    var AOValues = [21, 21, 21, 21, 21, 21, 21];
-    var NoValues = [0, 0, 0, 0, 0, 0, 0];
-    var Values7 = [7, 7, 7, 7, 7, 7, 7];
-    
-    var equipmentTypes = [
-        { name: 'Melee', statDependency: 'Strength' },
-        { name: 'Ranged', statDependency: 'Precision' },
-        { name: 'Catalyst', statDependency: 'Intelligence' },
-        { name: 'Light armor', statDependency: 'Speed'},
-        { name: 'Heavy armor', statDependency: 'Vitality'}
-    ];
-
-     const titleOptions = [
+ const titleOptions = [
     {
       value: "Prime",
       label: "Prime",
@@ -50,6 +27,31 @@ $(document).ready(function() {
   ];
 
      const titlesContainer = document.getElementById("titlesContainer");
+
+$(document).ready(function() {
+    // array of grades
+    var grades = ['F','E', 'D', 'C', 'B', 'A', 'S'];
+    var gradeValues = [7, 14, 21, 28, 35, 42, 49];
+    var gradeValues2 = [14, 28, 42, 56, 70, 84, 98];
+    var gradeValues3 = [21, 42, 63, 84, 105, 126, 147];
+    var gradeValues4 = [28, 56, 84, 112, 140, 168, 196];
+    var gradeValues5 = [35, 70, 105, 140, 175, 210, 245];
+    var gradeValues6 = [56, 112, 168, 224, 280, 336, 392];
+    var gradeValues7 = [70, 140, 210, 280, 350, 420, 490];
+    var gradeValues8 = [42, 84, 126, 168, 210, 252, 294];
+    var AOValues = [21, 21, 21, 21, 21, 21, 21];
+    var NoValues = [0, 0, 0, 0, 0, 0, 0];
+    var Values7 = [7, 7, 7, 7, 7, 7, 7];
+    
+    var equipmentTypes = [
+        { name: 'Melee', statDependency: 'Strength' },
+        { name: 'Ranged', statDependency: 'Precision' },
+        { name: 'Catalyst', statDependency: 'Intelligence' },
+        { name: 'Light armor', statDependency: 'Speed'},
+        { name: 'Heavy armor', statDependency: 'Vitality'}
+    ];
+
+    
 
     var skillTypes = [
         { name: '<----------------------Movement---------------------->', statDependency: ' ', gradeValues: gradeValues, textInput: false },

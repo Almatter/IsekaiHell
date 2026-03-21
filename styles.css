@@ -57,38 +57,82 @@ input[type="number"] {
     margin-top: 20px; /* Add space above each fighting style header */
 }
 
+//added for the title section
 .form-group {
   margin-bottom: 16px;
 }
 
-.title-row {
-  margin-bottom: 12px;
-  padding: 10px;
+.title-section {
+  max-width: 700px;
+}
+
+.title-description-box {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #f9f9f9;
+  color: #444;
+  min-height: 42px;
+}
+
+.title-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.title-add-row select {
+  flex: 1;
+  padding: 8px;
+}
+
+.title-add-row button {
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.selected-titles {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selected-title-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
   border: 1px solid #ccc;
   border-radius: 6px;
   background: #f9f9f9;
 }
 
-.title-row label {
-  display: block;
+.selected-title-main {
+  flex: 1;
+}
+
+.selected-title-name {
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
-.title-row select {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 6px;
-}
-
-.title-note {
+.selected-title-meta {
   font-size: 0.9rem;
   color: #666;
 }
 
-.title-description {
-  display: block;
-  margin-top: 4px;
-  font-size: 0.9rem;
-  color: #444;
+.remove-title-btn {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.remove-title-btn:hover {
+  opacity: 0.7;
 }

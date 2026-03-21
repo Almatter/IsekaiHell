@@ -26,7 +26,7 @@
     }
   ];
 
-     const titlesContainer = document.getElementById("titlesContainer");
+     let selectedTitles = [];
 
 $(document).ready(function() {
     // array of grades
@@ -1061,97 +1061,99 @@ function updateEquipmentCost(equipmentRow) {
 }
 
 // Keeps current selected title chain in order
-  let selectedTitles = [""];
-
-  function renderTitles() {
-    titlesContainer.innerHTML = "";
-
-    for (let i = 0; i < selectedTitles.length; i++) {
-      const row = document.createElement("div");
-      row.className = "title-row";
-
-      const label = document.createElement("label");
-      label.setAttribute("for", `title-${i}`);
-      label.textContent = i === 0 ? "Title" : `Additional Title ${i + 1}`;
-      row.appendChild(label);
-
-      const select = document.createElement("select");
-      select.id = `title-${i}`;
-      select.dataset.index = i;
-
-      const defaultOption = document.createElement("option");
-      defaultOption.value = "";
-      defaultOption.textContent = "-- Select a Title --";
-      select.appendChild(defaultOption);
-
-      // Exclude already chosen titles, except for the current selection in this slot
-      const usedBefore = selectedTitles.slice(0, i);
-
-      titleOptions.forEach(option => {
-        if (!usedBefore.includes(option.value)) {
-          const opt = document.createElement("option");
-          opt.value = option.value;
-          opt.textContent = `${option.label} - ${option.description}`;
-          if (selectedTitles[i] === option.value) {
-            opt.selected = true;
-          }
-          select.appendChild(opt);
-        }
-      });
-
-      select.addEventListener("change", handleTitleChange);
-      row.appendChild(select);
-
-      const note = document.createElement("div");
-      note.className = "title-note";
-      note.textContent = i === 0 ? "First title is included." : "Extra title: +7 pts";
-      row.appendChild(note);
-
-      // Show chosen title description below select
-      const current = titleOptions.find(t => t.value === selectedTitles[i]);
-      if (current) {
-        const desc = document.createElement("span");
-        desc.className = "title-description";
-        desc.textContent = current.description;
-        row.appendChild(desc);
-      }
-
-      titlesContainer.appendChild(row);
-    }
+function getTitleByValue(value) {
+    return titleOptions.find(t => t.value === value);
   }
 
-function handleTitleChange(e) {
-    const index = parseInt(e.target.dataset.index, 10);
-    const value = e.target.value;
-
-    // Set current selection
-    selectedTitles[index] = value;
-
-    // Remove every title after the one changed
-    selectedTitles = selectedTitles.slice(0, index + 1);
-
-    // If a valid title was chosen and there are still unused options, add next dropdown
-    if (value) {
-      const used = selectedTitles.filter(Boolean);
-      const remaining = titleOptions.filter(t => !used.includes(t.value));
-
-      if (remaining.length > 0) {
-        selectedTitles.push("");
-      }
-    }
-
-    renderTitles();
-    calculatePoints();
-  }
-
- function getExtraTitleCost() {
-    const chosenCount = selectedTitles.filter(Boolean).length;
-    return Math.max(0, chosenCount - 1) * 7;
+  function getExtraTitleCost() {
+    return Math.max(0, selectedTitles.length - 1) * 7;
   }
 
   function getSelectedTitles() {
-    return selectedTitles.filter(Boolean);
+    return selectedTitles.slice();
   }
+
+  function populateTitleDropdown() {
+    const $select = $("#titleSelect");
+    const currentValue = $select.val();
+
+    $select.html('<option value="">-- Select a Title --</option>');
+
+    $.each(titleOptions, function (_, option) {
+      if (!selectedTitles.includes(option.value)) {
+        $select.append(
+          $("<option>", {
+            value: option.value,
+            text: option.label
+          })
+        );
+      }
+    });
+
+    if ($select.find(`option[value="${currentValue}"]`).length) {
+      $select.val(currentValue);
+    } else {
+      $select.val("");
+    }
+
+    updateSelectedDescription();
+    $("#addTitleBtn").prop("disabled", !$select.val());
+  }
+
+  function updateSelectedDescription() {
+    const value = $("#titleSelect").val();
+    const title = getTitleByValue(value);
+
+    $("#titleDescription").text(
+      title ? title.description : "Select a title to see its description."
+    );
+  }
+
+  function renderSelectedTitles() {
+    const $container = $("#selectedTitlesContainer");
+    $container.empty();
+
+    $.each(selectedTitles, function (index, value) {
+      const title = getTitleByValue(value);
+      if (!title) return;
+
+      const extraText = index === 0
+        ? "First title included."
+        : "Extra title: +7 pts.";
+
+      $container.append(`
+        <div class="selected-title-item" data-title="${title.value}">
+          <div class="selected-title-main">
+            <div class="selected-title-name">${title.label}</div>
+            <div class="selected-title-meta">${title.description} ${extraText}</div>
+          </div>
+          <button type="button" class="remove-title-btn" aria-label="Remove ${title.label}">&times;</button>
+        </div>
+      `);
+    });
+  }
+
+  function addTitle() {
+    const value = $("#titleSelect").val();
+    if (!value || selectedTitles.includes(value)) return;
+
+    selectedTitles.push(value);
+
+    renderSelectedTitles();
+    populateTitleDropdown();
+    calculatePoints();
+  }
+
+  function removeTitle(value) {
+    selectedTitles = $.grep(selectedTitles, function (title) {
+      return title !== value;
+    });
+
+    renderSelectedTitles();
+    populateTitleDropdown();
+    calculatePoints();
+  }
+
 
 
 document.getElementById("toggle-theme-button").addEventListener("click", function () {

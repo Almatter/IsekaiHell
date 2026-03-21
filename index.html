@@ -41,10 +41,22 @@
             <label for="minion">Is minion?</label>
         </div>
     </div>
-    <div class="form-group">
-      <label for="title-0">Title</label>
-      <div id="titlesContainer"></div>
-    </div>
+  <div class="form-group title-section">
+  <label for="titleSelect">Title</label>
+
+  <div id="titleDescription" class="title-description-box">
+    Select a title to see its description.
+  </div>
+
+  <div class="title-add-row">
+    <select id="titleSelect">
+      <option value="">-- Select a Title --</option>
+    </select>
+    <button type="button" id="addTitleBtn">Add</button>
+  </div>
+
+  <div id="selectedTitlesContainer" class="selected-titles"></div>
+</div>
     <div id="stats">
         <h2>Stats</h2>
         <div>Strength: <select id="strength" class="stat-grade"><option value="-14">H</option><option value="-7">G</option><option value="0" selected="">F</option><option value="7">E</option><option value="14">D</option><option value="21">C</option><option value="28">B</option><option value="35">A</option><option value="42">S</option></select></div>

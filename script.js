@@ -984,7 +984,10 @@ $(document).ready(function() {
         $('#stgrade').val(standingIndex * 7);
     }
 
-    // function to calculate points
+   
+});
+
+ // function to calculate points
 function calculatePoints() {
     var points = 0;
     // add title points
@@ -1060,8 +1063,6 @@ function calculatePoints() {
     }
 
 }
-
-});
 
 
 function updateEquipmentCost(equipmentRow) {

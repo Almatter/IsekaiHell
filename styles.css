@@ -110,6 +110,17 @@ input[type="number"] {
   flex: 1;
 }
 
+.form-wrapper {
+  display: flex;
+  justify-content: center;   /* horizontal centering */
+  padding: 16px;
+}
+
+.form-group {
+  width: 100%;
+  max-width: 700px;          /* keeps it readable on desktop */
+}
+
 .selected-title-name {
   font-weight: 600;
   margin-bottom: 4px;

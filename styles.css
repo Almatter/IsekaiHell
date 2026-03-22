@@ -60,6 +60,7 @@ input[type="number"] {
 //added for the title section
 .form-group {
   margin-bottom: 16px;
+    margin-top:16px;
 }
 
 .title-section {

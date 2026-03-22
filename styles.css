@@ -77,13 +77,13 @@ input[type="number"] {
 }
 
 .title-add-row {
-  display: flex;
+ 
   gap: 8px;
   align-items: stretch;
 }
 
 .title-add-row select {
-  flex: 1;
+
   padding: 8px;
 }
 
@@ -105,9 +105,7 @@ input[type="number"] {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 12px;
-  border: 1px solid #ccc;
   border-radius: 6px;
-  background: #f9f9f9;
 }
 
 .selected-title-main {
@@ -126,11 +124,12 @@ input[type="number"] {
 
 .remove-title-btn {
   border: none;
-  background: transparent;
+  background: red;
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
   padding: 2px 6px;
+
 }
 
 .remove-title-btn:hover {

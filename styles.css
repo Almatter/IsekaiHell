@@ -69,10 +69,7 @@ input[type="number"] {
 .title-description-box {
   margin-bottom: 10px;
   padding: 10px 12px;
-  border: 1px solid #ccc;
   border-radius: 6px;
-  background: #f9f9f9;
-  color: #444;
   min-height: 42px;
 }
 
@@ -119,7 +116,6 @@ input[type="number"] {
 
 .selected-title-meta {
   font-size: 0.9rem;
-  color: #666;
 }
 
 .remove-title-btn {

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Isekai Hell World Lore</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/lore.css">
+</head>
+<body class="lore-page">
+  <div class="world-grid"></div>
+  <header class="topbar lore-topbar">
+    <div class="brand"><div class="brand-mark" aria-hidden="true"><span class="brand-star"></span><span class="brand-core"></span></div><div><div class="eyebrow">ISEKAI HELL // WORLD LORE</div><h1>The World Remembers.</h1></div></div>
+    <nav class="site-nav" aria-label="Isekai Hell tools"><a class="site-link" href="index.html">Character Creation</a><a class="site-link active" href="lore.html">Lore</a><a class="site-link" href="races.html">Races</a></nav>
+    <div class="top-actions"><button class="ui-btn ghost" id="btnSiteSound">FX: Off</button><button class="ui-btn ghost" id="btnSiteAmbient">Music: Off</button><button class="ui-btn ghost" id="btnSiteTrack">Track</button></div>
+  </header>
+  <main class="lore-shell">
+    <aside class="lore-nav-panel">
+      <button class="lore-nav-button active" data-lore-home>World / Arrival</button>
+      <div class="eyebrow lore-nav-label">SECOND CONTINENT</div>
+      <div id="countryNav" class="country-nav"></div>
+    </aside>
+    <section class="lore-main">
+      <div id="loreHome"></div>
+      <article id="countryView" class="country-view hidden"></article>
+    </section>
+  </main>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <script src="data/lore.js"></script>
+  <script src="js/music.js"></script>
+  <script src="js/site-shell.js"></script>
+  <script src="js/lore.js"></script>
+</body>
+</html>

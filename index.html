@@ -1,116 +1,253 @@
-<html><head>
-    <link rel="stylesheet" type="text/css" href="styles.css">
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Isekai Hell Character Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
 </head>
-<button id="toggle-theme-button">Switch</button>
 <body>
-    <!--<div id="bannerimage"></div>-->
-    <h1>Character Sheet</h1>
+  <div class="world-grid"></div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><span class="brand-star"></span><span class="brand-core"></span></div>
+      <div>
+        <div class="eyebrow">ISEKAI HELL // CHARACTER CREATION</div>
+        <h1>Craft your vessel, Fresh Soul.</h1>
+      </div>
+    </div>
+    <nav class="site-nav" aria-label="Isekai Hell tools">
+      <a class="site-link active" href="index.html">Character Creation</a>
+      <a class="site-link" href="lore.html">Lore</a>
+      <a class="site-link" href="races.html">Races</a>
+    </nav>
+    <div class="top-actions" aria-label="Character data controls">
+      <button class="ui-btn ghost" id="btnImport" title="Import a character JSON file">Import</button>
+      <button class="ui-btn ghost" id="btnExport" title="Export this character as JSON">Export</button>
+      <button class="ui-btn" id="btnSaveLocal" title="Save this character in this browser">Save</button>
+      <button class="ui-btn ghost sound-toggle" id="btnSound" type="button" aria-pressed="false" title="Toggle interface sounds">FX: Off</button>
+      <button class="ui-btn ghost ambient-toggle" id="btnAmbient" type="button" aria-pressed="false" title="Toggle musical background ambience">Music: Off</button>
+      <button class="ui-btn ghost" id="btnTrack" type="button" title="Cycle background music">Track: Wayfarer</button>
+      <button class="ui-btn danger subtle" id="btnReset" type="button" title="Clear the current on-screen build without deleting the browser save">Reset</button>
+      <input id="fileImport" type="file" accept="application/json,.json" hidden>
+    </div>
+  </header>
 
-    <div id="loading" style="
-    display: none;
-    text-align: center;
-    padding: 10px;
-">
-    <img src="https://media.tenor.com/khzZ7-YSJW4AAAAM/cargando.gif" 
-         alt="Loading..."
-         style="width: 40px; height: 40px; display: block; margin: 0 auto;">
-    <div style="font-size: 14px; margin-top: 5px;">Loading…</div>
-</div>
-    
-    <div id="points">Points spent: <span id="point-value" class="red-text">0</span> Points remaining: <span id="point-remaining" class="green-text">105</span></div>
-    <div>
-        <label for="earned-points">Earned Points:</label>
-        <input type="number" id="earned-points" name="earned-points">
-        <br>
-        <input type="checkbox" id="born-for-this" name="born-for-this">
-        <label for="born-for-this">Born for this (+7 points)</label>
-        <input type="checkbox" id="cashback" name="cashback">
-        <label for="cashback">Cashback (+28 points)</label>
-        <div>
-            <label><input type="checkbox" id="companion">Is companion?</label>
-            <select id="companion-grade" disabled>
-                <option value="-35" selected>F</option>
-                <option value="0">E</option>
-                <option value="35">D</option>
-                <option value="70">C</option>
-                <option value="105">B</option>
-                <option value="140">A</option>
-                <option value="175">S</option>
-            </select>
-            <input type="checkbox" id="minion" name="minion">
-            <label for="minion">Is minion?</label>
+  <main class="app-shell">
+    <aside class="rail">
+      <nav id="stepNav" class="step-nav" aria-label="Character creation steps">
+        <button data-step="identity" class="step active"><span>01</span>Identity</button>
+        <button data-step="origin" class="step"><span>02</span>Origin & Race</button>
+        <button data-step="stats" class="step"><span>03</span>Stats</button>
+        <button data-step="skills" class="step"><span>04</span>Skills</button>
+        <button data-step="combat" class="step"><span>05</span>Styles & Magic</button>
+        <button data-step="gear" class="step"><span>06</span>Gear & Assets</button>
+        <button data-step="followers" class="step conditional-step hidden"><span>07</span>Followers</button>
+        <button data-step="abilities" class="step"><span>07</span>Abilities</button>
+        <button data-step="titles" class="step"><span>08</span>Titles & Classes</button>
+        <button data-step="review" class="step"><span>09</span>Review</button>
+      </nav>
+      <div class="rail-card small">
+        <div class="label">Rules snapshot</div>
+        <div id="rulesVersion">2026-09-05</div>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <section class="panel step-panel active" data-panel="identity">
+        <div class="panel-head"><div><div class="eyebrow">01 // Identity</div><h2>Who is entering Isekai Hell?</h2></div></div>
+        <div class="form-grid two">
+          <label>Character Name<input id="characterName" autocomplete="off" placeholder="Character name"></label>
+          <label>Player / RP'er Name<input id="playerName" autocomplete="off" placeholder="Optional"></label>
+          <label class="wide">Race Title<input id="raceTitle" autocomplete="off" placeholder="Elf, Human, Beastman, Construct..."><small>Your written race title is equipped alongside the selected racial tree title(s). When the world race catalog is added, recognized race names will also be checked against their template.</small></label>
+          <label class="wide">Character Image URL
+            <input id="characterImageUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://example.com/character.png">
+            <small>Optional. The builder does not upload images; it displays an external HTTPS image and includes the URL in exports.</small>
+          </label>
+          <div class="portrait-preview identity-portrait wide" id="identityPortrait" aria-live="polite">
+            <div class="portrait-placeholder"><span>NO IMAGE LINKED</span></div>
+          </div>
+          <label>Height<input id="height" placeholder="Optional"></label>
+          <label>Weight<input id="weight" placeholder="Optional"></label>
+          <label class="wide">Visible Features<textarea id="featuresText" rows="3" placeholder="Only if the character has notable visible features"></textarea></label>
+          <label class="wide">Backstory<textarea id="backstory" rows="5" placeholder="Optional"></textarea></label>
+          <label class="wide">Current Life<textarea id="currentLife" rows="4" placeholder="Optional"></textarea></label>
         </div>
-    </div>
+      </section>
 
-    <!--title content-->
-    <div class="form-wrapper">
-  <div class="form-group title-section">
-  <label for="titleSelect"><h2>Racial Title</h2></label>
+      <section class="panel step-panel" data-panel="origin">
+        <div class="panel-head"><div><div class="eyebrow">02 // Origin & Race</div><h2>Origin, size, and racial path</h2></div></div>
+        <div class="choice-grid two" id="originChoices"></div>
+        <hr class="divider">
+        <div class="form-grid two">
+          <label>Size<select id="sizeSelect"></select><small id="sizeNote"></small></label>
+          <label>Scoop Carry-in Points<input id="scoopPoints" type="number" min="0" step="1" value="0"><small>Optional points salvaged into a replacement character. A non-7 remainder may remain unspent.</small></label>
+          <label>Evolution Path<select id="evolutionPath"><option value="variant">Variant</option><option value="native">Native</option><option value="hybrid">Hybrid / Mixed Race</option></select></label>
+          <label>World Race Template<select id="raceTemplateSelect"><option value="">Custom / write-in race</option></select><small>Selecting a known world race links its setting profile and creation requirements to the build.</small></label>
+          <label>Primary Racial Tree<select id="treeSelect"></select><small id="treeWarning"></small></label>
+          <label id="hybridParentsWrap" class="hidden">Additional Parent Trees<select id="hybridParents" multiple size="5"></select><small>Mixed Race costs 7 points per additional racial tree.</small></label>
+          <label>Racial Perk<select id="racialPerk"></select><small id="racialPerkNote"></small></label>
+          <label id="chosenPathWrap" class="hidden">Chosen Path Skill<select id="chosenPathSkill"></select><small>Replaces the origin's free Appraisal / Area Knowledge and scales freely with Standing.</small></label>
+          <label id="bornForThisWrap" class="hidden">Born For This Discount Target<select id="bornForThisTarget"></select><small>Applies one 7 point discount to a qualifying racial requirement purchase.</small></label>
+          <div id="versatileWrap" class="hidden wide form-grid two"><label>Versatile Equipment Type<select id="versatileItem"><option value="melee">Melee Weapons</option><option value="ranged">Ranged Weapons</option><option value="catalyst">Catalyst</option></select></label><label>Alternate Governing Stat<select id="versatileStat"><option>Strength</option><option>Precision</option><option>Intelligence</option></select></label></div>
+        </div>
+        <div class="rule-callout" id="raceRequirements"></div>
+        <div id="raceTemplatePanel" class="race-template-panel"></div>
+        <section class="race-browser">
+          <div class="race-browser-head">
+            <div><div class="eyebrow">WORLD STANDARD // RACE COMPENDIUM</div><h3>Browse established race templates</h3></div>
+            <input id="raceSearch" type="search" placeholder="Search race, description, lineage, or requirement">
+          </div>
+          <div id="raceTreeFilters" class="race-tree-filters"></div>
+          <div id="raceCatalog" class="race-catalog"></div>
+        </section>
+      </section>
 
-  <div id="titleDescription" class="title-description-box">
-   Racial Titles are used to dictate societal impressions of character and determine what racial perks the character has access to. 
-      Racial Titles may be changed through roleplay after creation. Select a Racial Title to see its description.
+      <section class="panel step-panel" data-panel="stats">
+        <div class="panel-head"><div><div class="eyebrow">03 // Stats</div><h2>Build the foundation</h2></div><div class="head-stat"><span>Character Grade</span><strong id="characterGradeTop">F</strong></div></div>
+        <div id="statsGrid" class="stats-grid"></div>
+        <div class="rule-callout">All normal starting stats begin at F. Creation normally caps stats at B. Reducing a stat to G or H grants points, but those gains offset stat investment when calculating Character Grade.</div>
+      </section>
+
+      <section class="panel step-panel" data-panel="skills">
+        <div class="panel-head"><div><div class="eyebrow">04 // Skills</div><h2>Choose skills</h2></div><button class="ui-btn small" id="btnAddCustomSkill">+ Custom row</button></div>
+        <div class="search-row">
+          <input id="skillSearch" placeholder="Search 150+ skills by name, category, tag, or rule text">
+          <select id="skillCategory"><option value="">All categories</option></select>
+        </div>
+        <div id="skillPreview" class="skill-preview rule-callout"><strong>Skill dossier</strong><br>Select a skill entry below to inspect its description and prerequisites before adding it.</div>
+        <div class="skill-layout">
+          <div id="skillCatalog" class="catalog"></div>
+          <div>
+            <h3>Selected Skills</h3>
+            <div id="selectedSkills" class="selected-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel step-panel" data-panel="combat">
+        <div class="panel-head"><div><div class="eyebrow">05 // Styles & Magic</div><h2>Techniques and affinities</h2></div></div>
+        <div class="combat-grid">
+          <div class="subpanel">
+            <div class="subpanel-head"><h3>Martial Techniques</h3><button class="ui-btn small" id="btnAddTechnique">+ Technique</button></div>
+            <p class="muted">Techniques attach to a Fighting Style. A normal Fighting Style grants one 7-point technique reduction per grade, each on a different core.</p>
+            <div id="techniqueList" class="selected-list"></div>
+          </div>
+          <div class="subpanel">
+            <div class="subpanel-head"><h3>Magic Affinities</h3><button class="ui-btn small" id="btnAddAffinity">+ Affinity</button></div>
+            <p class="muted">Use these for the named affinity cores. Freeform elemental or genre affinities can also be added.</p>
+            <div id="affinityList" class="selected-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel step-panel" data-panel="gear">
+        <div class="panel-head"><div><div class="eyebrow">06 // Gear & Assets</div><h2>What does the character start with?</h2></div></div>
+        <div class="combat-grid">
+          <div class="subpanel">
+            <div class="subpanel-head"><h3>Equipment</h3><button class="ui-btn small" id="btnAddEquipment">+ Equipment</button></div>
+            <p class="muted">One item may fill multiple equipment types. Each type adds its normal per-grade cost and the item must satisfy every type's stat requirement.</p>
+            <div id="equipmentList" class="selected-list"></div>
+          </div>
+          <div class="subpanel">
+            <div class="subpanel-head"><h3>Assets</h3><button class="ui-btn small" id="btnAddAsset">+ Asset</button></div>
+            <p class="muted">Creation assets are capped at F. An F asset can represent something impressive, but the more improbable the starting possession, the more limited, damaged, disgraced, remote, indebted, or otherwise compromised it should be.</p>
+            <div id="assetList" class="selected-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel step-panel" data-panel="followers">
+        <div class="panel-head"><div><div class="eyebrow">FOLLOWERS // ATTACHED SOULS</div><h2>Buddies, minions, and companions</h2></div></div>
+        <p class="muted">This workspace appears when a selected skill creates or builds NPC followers. It keeps creation information beside the parent character without forcing unused follower sections onto every sheet.</p>
+        <div id="followerWorkspace" class="follower-workspace"></div>
+      </section>
+
+      <section class="panel step-panel" data-panel="abilities">
+        <div class="panel-head"><div><div class="eyebrow">07 // Abilities</div><h2>Combine the pieces</h2></div><button class="ui-btn small" id="btnAddAbility">+ Ability</button></div>
+        <p class="muted">Ability grade is normally the highest-grade component used. Cooldown follows that grade. The action estimate honors the ruling that one +1 action effect may ride on a damaging ability without increasing its action cost.</p>
+        <div id="abilityList" class="selected-list abilities"></div>
+      </section>
+
+      <section class="panel step-panel" data-panel="titles">
+        <div class="panel-head"><div><div class="eyebrow">08 // Titles & Classes</div><h2>What has the build earned?</h2></div></div>
+        <div class="combat-grid">
+          <div class="subpanel">
+            <h3>Acquired Titles</h3>
+            <div id="titleList" class="selected-list"></div>
+            <button class="ui-btn small" id="btnAddTitle">+ Custom title</button>
+            <div class="title-suggestions-block">
+              <h3>Job Title Suggestions</h3>
+              <p class="muted">Suggestions use the Job Title thresholds for clear weapon/tool skills. They are convenience prompts, not automatic approvals.</p>
+              <div id="jobTitleSuggestions" class="selected-list compact"></div>
+            </div>
+          </div>
+          <div class="subpanel">
+            <h3>Class Checks</h3>
+            <div id="classChecks"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel step-panel" data-panel="review">
+        <div class="panel-head"><div><div class="eyebrow">09 // Review</div><h2>Ready for approval?</h2></div></div>
+        <div id="validationSummary"></div>
+        <div class="review-actions">
+          <button class="ui-btn" id="btnGenerateSheet">Generate Sheet</button>
+          <button class="ui-btn ghost" id="btnCopySheet">Copy Text</button>
+        </div>
+        <textarea id="sheetOutput" class="sheet-output" rows="28" spellcheck="false" placeholder="Generated character sheet will appear here."></textarea>
+      </section>
+    </section>
+
+    <aside class="summary-pane">
+      <div class="summary-card sticky">
+        <div class="eyebrow" id="summaryHeader">BODY // ACTIVE TITLES</div>
+        <div class="portrait-preview summary-portrait" id="summaryPortrait">
+          <div class="portrait-placeholder"><span>CHARACTER IMAGE</span></div>
+        </div>
+        <div class="name" id="summaryName">Unnamed Character</div>
+        <div class="summary-titles" id="summaryTitles">No equipped titles yet</div>
+        <div class="summary-grid">
+          <div><span>Available</span><strong id="sumAvailable">105</strong></div>
+          <div><span>Spent</span><strong id="sumSpent">0</strong></div>
+          <div><span>Remaining</span><strong id="sumRemaining">105</strong></div>
+          <div><span>Char. Grade</span><strong id="sumCharGrade">F</strong></div>
+          <div><span>Standing</span><strong id="sumStanding">F</strong></div>
+          <div><span>Power</span><strong id="sumPower">F</strong></div>
+        </div>
+        <div class="meter"><div id="budgetMeter"></div></div>
+        <div id="quickWarnings" class="quick-warnings"></div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="mobile-summary" id="mobileSummary">
+    <span><b id="mobileRemaining">105</b> pts left</span>
+    <span>Grade <b id="mobileGrade">F</b></span>
+    <button id="mobileReview">Review</button>
   </div>
 
-  <div class="title-add-row">
-    <select id="titleSelect">
-      <option value="">-- Select a Title --</option>
-    </select>
-    <button type="button" id="addTitleBtn">Add</button>
-  </div>
+  <dialog id="modal">
+    <form method="dialog" class="modal-card">
+      <div class="modal-head"><h3 id="modalTitle">Edit</h3><button value="cancel" class="icon-btn">×</button></div>
+      <div id="modalBody"></div>
+      <div class="modal-actions"><button value="cancel" class="ui-btn ghost">Cancel</button><button type="button" id="modalSave" class="ui-btn">Save</button></div>
+    </form>
+  </dialog>
 
-  <div id="selectedTitlesContainer" class="selected-titles"></div>
-</div>
-    </div>
-
-    <!--stats content -->
-    <div id="stats">
-        <h2>Stats</h2>
-        <div>Strength: <select id="strength" class="stat-grade"><option value="-14">H</option><option value="-7">G</option><option value="0" selected="">F</option><option value="7">E</option><option value="14">D</option><option value="21">C</option><option value="28">B</option><option value="35">A</option><option value="42">S</option></select></div>
-        <div>Precision: <select id="precision" class="stat-grade"><option value="-14">H</option><option value="-7">G</option><option value="0" selected="">F</option><option value="7">E</option><option value="14">D</option><option value="21">C</option><option value="28">B</option><option value="35">A</option><option value="42">S</option></select></div>
-        <div>Intelligence: <select id="intelligence" class="stat-grade"><option value="-14">H</option><option value="-7">G</option><option value="0" selected="">F</option><option value="7">E</option><option value="14">D</option><option value="21">C</option><option value="28">B</option><option value="35">A</option><option value="42">S</option></select></div>
-        <div>Vitality: <select id="vitality" class="stat-grade"><option value="-14">H</option><option value="-7">G</option><option value="0" selected="">F</option><option value="7">E</option><option value="14">D</option><option value="21">C</option><option value="28">B</option><option value="35">A</option><option value="42">S</option></select></div>
-        <div>Speed: <select id="speed" class="stat-grade"><option value="-14">H</option><option value="-7">G</option><option value="0" selected="">F</option><option value="7">E</option><option value="14">D</option><option value="21">C</option><option value="28">B</option><option value="35">A</option><option value="42">S</option></select></div>
-        <div>Character Grade: <span id="hidden-character-grade"></span></div>
-        <div>Standing Grade: <span id="hidden-standing-grade"></span></div>
-        <input type="hidden" id="chgrade" name="chgrade">
-        <input type="hidden" id="stgrade" name="stgrade">
-        <input type="hidden" id="magic" name="magic">
-        <input type="hidden" id="fight" name="fight">
-        <input type="hidden" id="null" value="48">
-    </div>
-    <div id="skills">
-        <h2>Skills</h2>
-         <span id="skill-description" style="margin: 0 10px;"></span>
-        <br>
-        <select id="skill-select"></select>
-       
-        <button id="add-skill">Add</button>
-        <div id="skill-list"></div>
-    </div>
-    <div id="fighting-style-container" class="fighting-style-container"></div>
-    <div id="fighting-style-container2" class="fighting-style-container2"></div>
-    <div id="equipment">
-        <h2>Equipment</h2>
-        <select id="equipment-select"></select>
-        <button id="add-equipment">Add</button>
-        <div id="equipment-list"></div>
-    </div>
-    <div id="custom">
-        <h2>Custom equipment/skills/assets</h2>
-        <button id="add-custom">Add Custom</button>
-    </div>
-    <div id="update">
-        <h4>Last update: standing grade + skills</h4>
-    </div>
-    <script src="jquery.min.js"></script>
-    <script src="script.js?v=4"></script>
-
-
-   
-
-<div id="output" style="white-space: pre-wrap;"></div>
-
-
-
-</body></html>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="data/meta.js"></script>
+  <script src="data/skills.js"></script>
+  <script src="data/techniques.js"></script>
+  <script src="data/affinities.js"></script>
+  <script src="data/races.js"></script>
+  <script src="js/music.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Isekai Hell Rules Training</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/training.css">
+</head>
+<body class="training-page">
+  <div class="world-grid"></div>
+  <header class="topbar training-topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><span class="brand-star"></span><span class="brand-core"></span></div>
+      <div><div class="eyebrow">ISEKAI HELL // RULES TRAINING</div><h1>Fresh Soul Orientation.</h1></div>
+    </div>
+    <nav class="site-nav" aria-label="Isekai Hell tools">
+      <a class="site-link" href="index.html">Home</a>
+      <a class="site-link" href="create.html">Character Creation</a>
+      <a class="site-link active" href="training.html">Rules Training</a>
+      <a class="site-link" href="lore.html">Lore</a>
+      <a class="site-link" href="races.html">Races</a>
+    </nav>
+    <div class="top-actions">
+      <button class="ui-btn ghost" id="btnSiteSound" type="button">FX: Off</button>
+      <button class="ui-btn ghost" id="btnSiteAmbient" type="button">Music: Off</button>
+      <button class="ui-btn ghost" id="btnSiteTrack" type="button">Track</button>
+    </div>
+  </header>
+
+  <main class="training-shell">
+    <section class="training-status" aria-label="Tutorial status">
+      <div class="training-meta"><span>ESTIMATED TIME</span><strong>10–15 MINUTES</strong></div>
+      <div class="training-meta warning"><span>PROGRESS</span><strong>NOT SAVED</strong></div>
+      <div class="training-meta desktop-only"><span>MODE</span><strong>SOLO ORIENTATION</strong></div>
+      <button class="tutorial-control" id="btnRestartTutorial" type="button">Restart</button>
+    </section>
+
+    <section id="tutorialGate" class="tutorial-gate">
+      <div class="gate-sigil" aria-hidden="true"><span></span></div>
+      <div class="eyebrow">[GOD] // ORIENTATION REQUEST</div>
+      <h2>Before the vessel wakes, learn how the world expects you to move through it.</h2>
+      <p>This introductory rules training takes about <strong>10–15 minutes</strong>. Progress is <strong>not saved</strong>; leaving or refreshing this page restarts the lesson. It works the same on desktop and mobile and does not grant World RP certification.</p>
+      <div class="gate-notes">
+        <div><b>YOU WILL LEARN</b><span>Racial trees, titles, stats, skill prerequisites, equipment, ability focus, cooldowns, movement in basic play, and narrator adjudication.</span></div>
+        <div><b>YOU WILL NOT NEED</b><span>A finished character sheet. The tutorial provides a temporary training vessel.</span></div>
+      </div>
+      <div class="gate-actions"><button class="ui-btn" id="btnBeginTutorial" type="button">Begin Orientation</button><a class="ui-btn ghost" href="index.html">Return Home</a></div>
+    </section>
+
+    <section id="tutorialApp" class="tutorial-app hidden" aria-live="polite">
+      <div class="tutorial-progress-wrap">
+        <div id="chapterProgress" class="chapter-progress"></div>
+      </div>
+
+      <div class="tutorial-layout">
+        <section class="vn-stage" id="vnStage" data-bg="void">
+          <div class="vn-backdrop" id="vnBackdrop"></div>
+          <div class="stage-grid"></div>
+          <div class="stage-sigil" aria-hidden="true"></div>
+          <div class="training-vessel hidden" id="trainingVessel">
+            <img src="assets/races/prime-mundane-human-1.webp" alt="Temporary training vessel">
+            <span id="trainingTreeLabel">TEMPORARY VESSEL</span>
+          </div>
+          <div class="simulacrum hidden" id="simulacrum" aria-hidden="true">
+            <div class="sim-core"></div><i></i><i></i><i></i><span>TRAINING SIMULACRUM</span>
+          </div>
+          <div id="systemOverlay" class="system-overlay hidden"></div>
+
+          <div class="dialogue-window">
+            <div class="speaker-line"><span id="speakerName">[god]</span><b id="sceneCounter">01</b></div>
+            <div id="dialogueText" class="dialogue-text"></div>
+            <div id="interactiveArea" class="interactive-area"></div>
+            <div class="dialogue-controls"><button class="tutorial-next" id="btnNextScene" type="button">Continue <span>›</span></button></div>
+          </div>
+        </section>
+
+        <aside class="rules-hud" id="rulesHud">
+          <button class="rules-hud-toggle" id="rulesHudToggle" type="button" aria-expanded="false"><span>RULES HUD</span><b id="hudCount">0</b></button>
+          <div class="rules-hud-body">
+            <div class="eyebrow">UNLOCKED CONCEPTS</div>
+            <div id="glossaryTerms" class="glossary-terms"></div>
+            <div id="glossaryDetail" class="glossary-detail"><span>Select an unlocked term for a short reminder.</span></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="build-footer training-footer"><span>ISEKAI HELL RULES TRAINING <b>v0.9.1</b></span><span>PROGRESS <b>NOT SAVED</b></span></footer>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <script src="data/tutorial-scenes.js"></script>
+  <script src="js/music.js"></script>
+  <script src="js/site-shell.js"></script>
+  <script src="js/tutorial-engine.js"></script>
+</body>
+</html>

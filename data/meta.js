@@ -1,5 +1,5 @@
 window.IH_META = {
-  version: "0.5.0",
+  version: "0.9.0",
   rulesSnapshot: "2026-09-05",
   grades: ["H","G","F","E","D","C","B","A","S"],
   skillGrades: ["F","E","D","C","B","A"],
@@ -18,6 +18,7 @@ window.IH_META = {
     {id:"large",name:"Large",pointDelta:-14,earned:false,height:"8 to 16 feet",weight:"500 to 4000 lb",move:40,notes:"Costs 14. Strength non-attack +1; mundane damage received -1; Speed -1; base movement 40 ft."},
     {id:"huge",name:"Huge",pointDelta:-28,earned:false,height:"Over 16 feet",weight:"Over 4000 lb",move:80,notes:"Costs 28. Strength non-attack +2; mundane damage received -2; Speed -2; base movement 80 ft."}
   ],
+  languageByTree: {prime:"Terran",beast:"Beastial",fae:"Sylvan",construct:"Analog",monster:"Abyssal"},
   origins: {
     isekai:{name:"Isekai'd",freeSkill:"Appraisal",freeSkillNote:"Appraisal is free and automatically follows Standing."},
     native:{name:"World Native",freeSkill:"Area Knowledge",freeSkillNote:"One Area Knowledge is free and automatically follows Standing."}
@@ -123,6 +124,9 @@ window.IH_META = {
     hybridEquipment:"Each equipment type adds its normal per-grade cost and all selected type prerequisites apply.",
     passiveSkillsInAbilities:false,
     narrativeBoosterCreatesTitle:true,
-    assetsUsuallyCreateTitles:true
+    assetsUsuallyCreateTitles:true,
+    artisanEquipmentDiscount:"A qualifying Artisan can apply 7 points per grade-step per normal equipment type to equipment of the same or lower grade. Natural equipment is excluded; special materials still pay the undiscounted premium.",
+    switchEquipment:"Two equipment pieces may be linked for a one-time 7 point cost; only one is active at a time and switching uses one action.",
+    startingLanguages:2
   }
 };

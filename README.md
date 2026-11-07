@@ -1,6 +1,13 @@
-# Isekai Hell Site v0.9.1
+# Isekai Hell Site v0.10.0
 
 Open `index.html` after extracting the full archive. The site is static and can be hosted from any ordinary web server.
+
+## v0.10.0 character builder corrections
+
+- Structured weapon types, criminal titles, school/style foundations, specialty stats and Tamer facilities now enforce their prerequisites.
+- Corrected Polymorph requirements, Standing gates, Resistance and Special Movement prices, missing martial cores and non-upgrading techniques/affinities.
+- Saved characters retain their data. Older affected entries need explicit weapon, foundation, stat or facility selections before passing the new checks.
+- Run `node --test tests/builder-rules.test.cjs` for regression checks. See `reports/remaining-issues.md` for the numbered follow-up list.
 
 ## v0.9.1 highlights
 

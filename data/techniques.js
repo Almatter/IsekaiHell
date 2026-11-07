@@ -240,7 +240,21 @@ window.IH_TECHNIQUES = [
   {
     "name": "Vorpal",
     "baseCost": 14,
-    "description": "[tech]Vorpal (14 points) - your attacks can overcome immunities to damage targets acquire through Change State skill and similar powers. Each grade allows your attacks to be effective against a stronger grade of target. C grade Vorpal let's you damage C grade Ghosts. B grade Vorpal lets you damage B grade lightning elementals. etc. Specialization Restriction: Does not benefit free perks from mastery 1 fighting style of your choice may become Specialized and viewed as your character's main fighting style. To apply, simply put [Specialize] by the fighting style skill in your skill list. Useful for saving points long term and having more flexible weapon ability creation for your preferred weapon style. Result: 1. You no longer get a free 7pt reduction to buy your first technique per grade for the fighting style 2. Most techniques cost 21pts 3. Techniques that do not gain functionality beyond F grade (like Blind Fighter) still only cost 7pts",
+    "description": "[tech]Vorpal (14 points) - your attacks can overcome immunities to damage targets acquire through Change State skill and similar powers. Each grade allows your attacks to be effective against a stronger grade of target. C grade Vorpal let's you damage C grade Ghosts. B grade Vorpal lets you damage B grade lightning elementals. etc.",
+    "actionTagged": false,
+    "nonUpgrading": false
+  },
+  {
+    "name": "Incurable",
+    "baseCost": 7,
+    "description": "Incurable - wounds produced by this technique will not heal nor regenerate magically or supernaturally unless skills involved are greater than the incurable technique grade.​",
+    "actionTagged": false,
+    "nonUpgrading": false
+  },
+  {
+    "name": "Indirect",
+    "baseCost": 7,
+    "description": "Indirect - Must be assigned after a Ranged technique is acquired. hit targets beyond cover and other obstacles through unique attacks that can come from other directions.​\n* Ex: conjuring a lightning bolt, arcing an arrow or bolt over head, ice barrage from the side. Must be same grade as the range tech core to provide full cover bypass at all ranges.",
     "actionTagged": false,
     "nonUpgrading": false
   }

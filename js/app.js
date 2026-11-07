@@ -1,6 +1,6 @@
 (function($){
 'use strict';
-const M=window.IH_META, SKILLS=window.IH_SKILLS||[], TECHS=window.IH_TECHNIQUES||[], AFFS=window.IH_AFFINITIES||[], RACES=window.IH_RACES||[];
+const M=window.IH_META, SKILLS=window.IH_SKILLS||[], TECHS=window.IH_TECHNIQUES||[], AFFS=window.IH_AFFINITIES||[], RACES=window.IH_RACES||[], RULES=window.IH_RULES;
 const GRADE_ORDER=['F','E','D','C','B','A','S'];
 const STAT_ORDER=['H','G','F','E','D','C','B','A','S'];
 const $modal=$('#modal');
@@ -14,11 +14,11 @@ let portraitTimer=null;
 let state=defaultState();
 
 function defaultState(){return {
-  schema:5, appVersion:M.version,
+  schema:6, appVersion:M.version,
   identity:{name:'',player:'',raceTitle:'',imageUrl:'',height:'',weight:'',languages:['Common','Terran'],features:'',backstory:'',currentLife:''},
-  origin:{type:'isekai',size:'medium',scoopPoints:0,evolutionPath:'variant',tree:'prime',parents:[],perk:'Chosen Path',chosenPathSkill:'',chosenPathDetail:'',bornTargets:[],versatileItem:'melee',versatileStat:'Strength',raceId:'',raceOverrideReason:'',freeSkillDetail:''},
+  origin:{type:'isekai',size:'medium',scoopPoints:0,evolutionPath:'variant',evolutionTier:'mundane',tree:'prime',parents:[],perk:'Chosen Path',chosenPathSkill:'',chosenPathDetail:'',bornTargets:[],versatileItem:'melee',versatileStat:'Strength',raceId:'',raceOverrideReason:'',freeSkillDetail:''},
   stats:{Strength:'F',Precision:'F',Intelligence:'F',Vitality:'F',Speed:'F'},
-  skills:[], techniques:[], affinities:[], equipment:[], switchLinks:[], assets:[], abilities:[], titles:[], classes:[], customRows:[],
+  skills:[], techniques:[], affinities:[], equipment:[], switchLinks:[], assets:[], abilities:[], titles:[], criminalTitles:[], classes:[], customRows:[],
   skillGrants:{}, followers:{buddy:null,minions:{},companions:{}},
   ui:{sound:false,ambient:false,musicTrack:'wayfarer',skillPreview:'',raceFilterTree:'Prime'}
 };}
@@ -56,6 +56,7 @@ function skillDisplayName(r){
 function detailRequirement(r){
   if(!r)return null;
   if(isArtisanSkill(r))return (!artisanType(r)||!artisanMaterial(r))?'Specify both Artisan type/trade and material/specialty':null;
+  const structured=RULES.details(r);if(structured)return structured;
   const need={"Area Knowledge":"Specify the area and/or locale this knowledge covers","Heightened Sense":"Specify which normal sense is heightened","Supersense":"Specify the additional sense granted","Sixth Sense":"Specify what supernatural perception is granted","Weaken [Stat]":"Specify the stat weakened","Bolster [Stat]":"Specify the stat bolstered","Language":"Specify the language learned"};
   return need[r.name]&&!String(r.detail||'').trim()?need[r.name]:null;
 }
@@ -68,7 +69,7 @@ function chosenPathDetailInfo(name){
     'Weaken [Stat]':['Stat Weakened','Strength, Precision, Intelligence, Vitality, or Speed'],
     'Bolster [Stat]':['Stat Bolstered','Strength, Precision, Intelligence, Vitality, or Speed'],
     'Language':['Language Learned','Sylvan, Terran, Beastial, Aquan...']
-  };return map[name]||null;
+  };return map[name]||(/\[[^\]]+\]/.test(name)?['Skill specialization','Name the weapon, movement type, element, feature, or other required subject']:null);
 }
 function techniqueDisplayName(r){if(r.core==='Drain'){const stat=r.targetStat||'?';return r.detail?`${r.detail} [Drain: ${stat}]`:`Drain [${stat}]`}return r.detail||r.core}
 function affinityDisplayName(r){if(r.core==='Drain'){const stat=r.targetStat||'?';return r.detail?`${r.detail} [Drain: ${stat}]`:`Drain [${stat}]`}return r.detail||r.core}
@@ -87,18 +88,19 @@ function mixedRaceCost(){return state.origin.evolutionPath==='hybrid'?7*(state.o
 function skillCost(row){
   if(row.custom)return Number(row.cost)||0;
   const def=getSkillDef(row.name); if(!def)return Number(row.cost)||0;
-  let c=skillCumulativeCost(def.baseCost,row.grade);
+  let c=skillCumulativeCost(RULES.price(row,def.baseCost),row.grade);
   const targets=state.origin.bornTargets||[]; if(targets.includes(row.id))c=Math.max(0,c-7);
   return c;
 }
 function techniqueCost(row){
+  const definition=TECHS.find(t=>t.name===row.core);const actualGrade=definition?.nonUpgrading?'F':row.grade;
   const style=state.skills.find(s=>s.id===row.styleId);
-  if(!style)return skillCumulativeCost(row.baseCost||7,row.grade);
+  if(!style)return skillCumulativeCost(definition?.baseCost||row.baseCost||7,actualGrade);
   if(style.specialized){
-    if(row.nonUpgrading)return 7;
+    if(definition?.nonUpgrading)return 7;
     return row.baseCost===14?35:21;
   }
-  let c=skillCumulativeCost(row.baseCost||7,row.grade);
+  let c=skillCumulativeCost(definition?.baseCost||row.baseCost||7,actualGrade);
   const siblings=state.techniques.filter(t=>t.styleId===row.styleId);
   const slots=gradeIndex(style.grade)+1;
   const seen=[];let discountedIds=[];
@@ -106,8 +108,8 @@ function techniqueCost(row){
   if(discountedIds.includes(row.id))c=Math.max(0,c-7);
   return c;
 }
-function techniqueGrade(row){const style=state.skills.find(s=>s.id===row.styleId);return style&&style.specialized?style.grade:row.grade}
-function affinityCost(row){return skillCumulativeCost(row.baseCost||7,row.grade)}
+function techniqueGrade(row){if(TECHS.find(t=>t.name===row.core)?.nonUpgrading)return 'F';const style=state.skills.find(s=>s.id===row.styleId);return style&&style.specialized?style.grade:row.grade}
+function affinityCost(row){const d=AFFS.find(a=>a.name===row.core);return skillCumulativeCost(d?.baseCost||row.baseCost||7,d?.nonUpgrading?'F':row.grade)}
 function equipmentTypeIds(row){const ids=Array.isArray(row.types)&&row.types.length?row.types:(row.type?[row.type]:[]);return [...new Set(ids)].filter(id=>M.equipmentTypes.some(t=>t.id===id))}
 function equipmentDefs(row){return equipmentTypeIds(row).map(id=>M.equipmentTypes.find(t=>t.id===id)).filter(Boolean)}
 function equipmentBaseCost(row){const steps=gradeIndex(row.grade)+1;const perGrade=equipmentDefs(row).reduce((sum,t)=>sum+(t.natural?14:7),0);const mult=row.specialMaterial?2:1;return Math.max(0,steps)*perGrade*mult}
@@ -149,6 +151,7 @@ function bindGlobal(){
   $('#sizeSelect').on('change',function(){state.origin.size=this.value;renderAll()});
   $('#scoopPoints').on('input',function(){state.origin.scoopPoints=Math.max(0,Number(this.value)||0);renderAll()});
   $('#evolutionPath').on('change',function(){state.origin.evolutionPath=this.value;if(this.value==='variant')state.origin.perk='Chosen Path';else if(this.value==='hybrid')state.origin.perk='Born For These';else state.origin.perk='';renderAll()});
+  $('#evolutionTier').on('change',function(){state.origin.evolutionTier=this.value;renderAll()});
   $('#raceTemplateSelect').on('change',function(){selectRaceTemplate(this.value,true)});
   $('#raceSearch').on('input',renderRaceCatalog);
   $('#raceTreeFilters').on('click','button[data-race-tree]',function(){state.ui.raceFilterTree=$(this).data('race-tree');renderRaceCatalog();});
@@ -175,6 +178,7 @@ function bindGlobal(){
   $('#btnAddAsset').on('click',()=>editAsset()); $('#assetList').on('click','button[data-remove-custom]',function(){state.customRows=state.customRows.filter(x=>x.id!==$(this).data('remove-custom'));renderAll()}).on('click','button[data-edit-asset]',function(){editAsset($(this).data('edit-asset'))}).on('click','button[data-remove-asset]',function(){state.assets=state.assets.filter(x=>x.id!==$(this).data('remove-asset'));renderAll()});
   $('#btnAddAbility').on('click',()=>editAbility()); $('#abilityList').on('click','button[data-edit-ability]',function(){editAbility($(this).data('edit-ability'))}).on('click','button[data-remove-ability]',function(){state.abilities=state.abilities.filter(x=>x.id!==$(this).data('remove-ability'));renderAll()});
   $('#btnAddTitle').on('click',()=>editTitle()); $('#titleList').on('click','button[data-equip-title]',function(){const t=state.titles.find(x=>x.id===$(this).data('equip-title'));if(t)t.equipped=!t.equipped;renderAll()}).on('click','button[data-equip-class]',function(){equipClass($(this).data('equip-class'));}).on('click','button[data-equip-asset-title]',function(){const a=state.assets.find(x=>x.id===$(this).data('equip-asset-title'));if(a)a.titleEquipped=!a.titleEquipped;renderAll()}).on('click','button[data-remove-title]',function(){state.titles=state.titles.filter(x=>x.id!==$(this).data('remove-title'));renderAll()});
+  $('#btnAddCriminalTitle').on('click',()=>editCriminalTitle());$('#criminalTitleList').on('click','button[data-edit-crime]',function(){editCriminalTitle($(this).data('edit-crime'))}).on('click','button[data-remove-crime]',function(){if(confirm('Remove this record only to correct an entry or after staff has cleared the criminal title. Continue?')){state.criminalTitles=state.criminalTitles.filter(t=>t.id!==$(this).data('remove-crime'));renderAll()}});
   $('#classChecks').on('click','button[data-equip-class]',function(){equipClass($(this).data('equip-class'))}).on('click','button[data-class-acquire]',function(){acquireClass($(this).data('class-acquire'))}).on('click','button[data-class-override]',function(){requestClassOverride($(this).data('class-override'))}).on('click','button[data-class-remove]',function(){removeClass($(this).data('class-remove'))});
   $('#jobTitleSuggestions').on('click','button[data-job-title]',function(){acceptJobTitleSuggestion($(this).data('job-title'))});
   $('#followerWorkspace').on('change','[data-follower-field]',handleFollowerField).on('click','button[data-add-companion]',function(){addCompanion($(this).data('add-companion'))}).on('click','button[data-remove-companion]',function(){removeCompanion($(this).data('pool'),$(this).data('remove-companion'))});
@@ -248,6 +252,7 @@ function resetBuilder(){
 function renderOrigin(){
   $('#originChoices .choice-card').removeClass('active').filter(`[data-origin="${state.origin.type}"]`).addClass('active');
   if(state.origin.evolutionPath==='hybrid')state.origin.parents=(state.origin.parents||[]).filter(x=>x!==state.origin.tree);
+  $('#evolutionTier').val(state.origin.evolutionTier||'mundane');
   $('#sizeSelect').val(state.origin.size);$('#scoopPoints').val(state.origin.scoopPoints||0);$('#evolutionPath').val(state.origin.evolutionPath);$('#raceTemplateSelect').val(state.origin.raceId||'');$('#treeSelect').val(state.origin.tree);$('#hybridParents').val(state.origin.parents||[]);
   const sz=M.sizes.find(s=>s.id===state.origin.size);$('#sizeNote').text(sz?`${sz.height}; ${sz.weight}. ${sz.notes}`:'');
   const tree=M.trees.find(t=>t.id===state.origin.tree);$('#treeWarning').text(tree&&tree.warning?tree.warning:'');
@@ -288,6 +293,8 @@ function renderSkillPreview(){const name=state.ui?.skillPreview;if(!name){$('#sk
 function addSkill(name){
   const def=getSkillDef(name);if(!def)return;
   const row={id:uid('sk'),name:def.name,grade:'F',detail:'',artisanType:'',artisanMaterial:'',specialized:false,notes:'',limiters:[]};
+  if(detailRequirement(row)||RULES.suiteKind(row)||RULES.facilities[name]||['Capacity','Chameleon','Scrying'].includes(name)||name.startsWith('Masterwork')){editSkill(null,name);return}
+  const initialCheck=validateSkill(row);if(!initialCheck.ok){alert(initialCheck.message);return}
   state.skills.push(row);renderAll();
   if(['Item','Transformation'].includes(row.name))setTimeout(()=>showStep('grants'),0);else if(detailRequirement(row))setTimeout(()=>editSkill(row.id),0);
 }
@@ -308,8 +315,69 @@ function freeSkillDisplay(){
   const detail=o.freeSkill==='Area Knowledge'?String(state.origin.freeSkillDetail||'').trim():'';
   return {name:o.freeSkill+(detail?` [${detail}]`:''),baseName:o.freeSkill,detail,grade:sg,note:o.freeSkillNote};
 }
-function editSkill(id){
-  const r=state.skills.find(x=>x.id===id);if(!r)return;const def=getSkillDef(r.name)||{};
+function ruleContext(){return {state,meta:M,techniques:TECHS,affinities:AFFS,techniqueGrade,standingGrade,characterGrade,allowedStats:equipmentAllowedStats,equipmentTypes:equipmentTypeIds,validateSkill}}
+function ruleSelect(id,label,options,selected,multiple=false){return `<label>${esc(label)}<select class="no-enhance" id="${id}" ${multiple?'multiple size="6"':''}>${multiple?'':'<option value="">Choose...</option>'}${options.map(o=>{const v=typeof o==='string'?o:o.value,t=typeof o==='string'?o:o.label;return `<option value="${esc(v)}" ${([].concat(selected||'')).includes(v)?'selected':''}>${esc(t)}</option>`}).join('')}</select></label>`}
+function skillRuleFields(r){
+  let h='';const opts=rows=>rows.map(s=>({value:s.id,label:`${skillDisplayName(s)} ${s.grade}`}));
+  if(RULES.isStyle(r)){
+    h+=ruleSelect('mWeaponTypes','Weapon types',RULES.weapons.map(w=>w.name),r.weaponTypes,true);
+    h+=`<small>Start with one weapon type. Generalist adds weapon types; a specialized style cannot use Generalist. Other styles remain allowed.</small><label>Other weapon name<input id="mOtherWeapon" value="${esc(r.otherWeaponType||'')}"></label>`;
+    h+=ruleSelect('mOtherWeaponCategory','Other weapon category',[{value:'melee',label:'Melee'},{value:'ranged',label:'Ranged'},{value:'shield',label:'Shield'},{value:'natural-melee',label:'Natural melee'},{value:'natural-ranged',label:'Natural ranged'}],r.otherWeaponCategory);
+  }
+  if(r.name.startsWith('Profession'))h+=ruleSelect('mGoverningStat','Profession governing stat',RULES.stats,r.governingStat);
+  if(r.name.startsWith('Masterwork Maker')||r.name.startsWith('Masterwork Refiner'))h+=ruleSelect('mCraftType','Masterwork specialty',Object.keys(r.name.startsWith('Masterwork Maker')?RULES.makerStats:RULES.refinerStats),r.craftType);
+  if(r.name==='Special Movement [movement type]')h+=ruleSelect('mMovementType','Special Movement type',Object.entries(RULES.movements).map(([value,cost])=>({value,label:`${value} (${cost} pts/grade)`})),r.movementType);
+  if(r.name==='Resistance [Element]')h+=ruleSelect('mResistanceType','Resistance coverage',[{value:'specific',label:'Individual damage type (7 pts/grade)'},{value:'physical',label:'Full Physical/Mundane (21 pts/grade)'},{value:'magical',label:'Full Magical (70 pts/grade)'}],r.resistanceType||(RULES.price(r,7)===21?'physical':RULES.price(r,7)===70?'magical':'specific'));
+  if(RULES.facilities[r.name]){h+=ruleSelect('mTamerSkill','Tamer skill',opts(state.skills.filter(s=>s.name==='Tamer')),r.tamerSkillId);h+=ruleSelect('mFacilityAsset',`${RULES.facilities[r.name]} Asset`,state.assets.filter(a=>a.assetKind===RULES.facilities[r.name]).map(a=>({value:a.id,label:`${a.name} ${a.grade}`})),r.facilityAssetId);h+=`<small>Add the matching facility type under Gear & Assets first.</small>`}
+  if(r.name==='Elasticity')h+=`<label class="checkbox-row"><input id="mFullBody" type="checkbox" ${r.fullBody?'checked':''}> Elasticity applies to the full body (can qualify for Capacity)</label>`;
+  if(r.name==='Capacity')h+=ruleSelect('mElasticitySkill','Full-body Elasticity (if not Large/Huge)',opts(state.skills.filter(s=>s.name==='Elasticity'&&s.fullBody)),r.elasticitySkillId);
+  if(r.name==='Chameleon')h+=`<small>Requires Hybrid/Mixed Race and recorded Intermediate or Ascended evolution in Origin & Race.</small>`;
+  if(r.name==='Scrying'){
+    const focuses=[...state.assets.map(x=>({value:'asset:'+x.id,label:`Asset: ${x.name} ${x.grade}`})),...state.equipment.map(x=>({value:'equipment:'+x.id,label:`Equipment: ${x.name} ${x.grade}`})),...state.skills.filter(x=>['Gear','Item'].includes(x.name)).map(x=>({value:'skill:'+x.id,label:`${skillDisplayName(x)} ${x.grade}`}))];
+    h+=ruleSelect('mScryingFocus','Possessed item/asset used as the scrying focus',focuses,r.focusRef);h+='<small>Choose the crystal ball, mirror, pool, or equivalent that actually enables scrying. Scrying cannot be used in a post with a move action.</small>';
+  }
+  const kind=RULES.suiteKind(r);
+  if(kind){
+    if(kind==='mastery'||kind==='domain')h+=ruleSelect('mParentSkill',kind==='mastery'?'Parent Martial Ethos':'Parent Magic School',opts(state.skills.filter(s=>RULES.suiteKind(s)===(kind==='mastery'?'ethos':'school'))),r.parentSkillId);
+    if(kind==='ethos'||kind==='mastery'){
+      h+=ruleSelect('mFoundationStyle','One Fighting Style',opts(state.skills.filter(RULES.isStyle)),r.styleId);
+      const style=state.skills.find(s=>s.id===r.styleId);h+=ruleSelect('mFoundationWeapon','One weapon type for this collection',style?.weaponTypes||[],r.foundationWeapon);
+    }else if(kind==='school')h+=ruleSelect('mMagicSkill','Magic skill',opts(state.skills.filter(s=>s.name==='Magic')),r.magicSkillId);
+    if(kind==='school')h+=`<label>School teachings and common spells<textarea id="mSchoolDescription" rows="3">${esc(r.schoolDescription||'')}</textarea></label>`;
+    const parent=state.skills.find(s=>s.id===r.parentSkillId),excluded=new Set(parent?.foundationRefs||[]);
+    const pool=RULES.foundationPool(r,ruleContext()).filter(p=>!excluded.has(p.ref));
+    h+=`<fieldset class="foundation-choices"><legend>Five acquired foundation entries</legend><small>${kind==='mastery'||kind==='domain'?'Choose five additional entries outside the parent collection.':'Choose five different cores/affinities; at most one of Penetrating, Linked, Homing, Deflect, Accurate.'} Every entry must support this skill’s grade.</small><div class="checkbox-row">${pool.map(p=>`<label><input name="mFoundation" type="checkbox" value="${esc(p.ref)}" ${(r.foundationRefs||[]).includes(p.ref)?'checked':''}> ${esc(p.name)} [${esc(p.core)}] ${p.grade}</label>`).join('')||'<p>No acquired entries for this collection. Purchase its foundations first.</p>'}</div></fieldset>`;
+  }
+  return h;
+}
+function readSkillRuleFields(r){
+  const read=(selector,key)=>{if($(selector).length)r[key]=$(selector).val()||''};
+  [['#mWeaponTypes','weaponTypes'],['#mOtherWeapon','otherWeaponType'],['#mOtherWeaponCategory','otherWeaponCategory'],['#mGoverningStat','governingStat'],['#mCraftType','craftType'],['#mMovementType','movementType'],['#mTamerSkill','tamerSkillId'],['#mFacilityAsset','facilityAssetId'],['#mElasticitySkill','elasticitySkillId'],['#mScryingFocus','focusRef'],['#mParentSkill','parentSkillId'],['#mFoundationStyle','styleId'],['#mFoundationWeapon','foundationWeapon'],['#mMagicSkill','magicSkillId'],['#mSchoolDescription','schoolDescription']].forEach(([a,b])=>read(a,b));
+  if(RULES.isStyle(r))r.weaponTypes=Array.isArray(r.weaponTypes)?r.weaponTypes:[];
+  if($('#mFullBody').length)r.fullBody=$('#mFullBody').is(':checked');
+  if($('#mResistanceType').length){r.resistanceType=$('#mResistanceType').val();if(r.resistanceType==='physical')r.detail='Physical';if(r.resistanceType==='magical')r.detail='Magical'}
+  if(r.movementType&&r.movementType!=='Other')r.detail=r.movementType;
+  if(r.craftType&&!r.detail)r.detail=r.craftType;
+  if(RULES.suiteKind(r))r.foundationRefs=$('input[name=mFoundation]:checked').map((_,e)=>e.value).get();
+}
+function skillRuleSummary(r){
+  const parts=[];
+  if(RULES.isStyle(r))parts.push(`Weapons: ${(r.weaponTypes||[]).map(w=>w==='Other'?r.otherWeaponType:w).join(', ')}`);
+  if(r.governingStat)parts.push(`Governing stat: ${r.governingStat}`);if(r.craftType)parts.push(`Specialty: ${r.craftType}`);
+  if(r.fullBody)parts.push('Full-body Elasticity');
+  if(RULES.suiteKind(r)){
+    const source=state.skills.find(s=>s.id===(r.parentSkillId||r.styleId||r.magicSkillId));if(source)parts.push(`Based on: ${skillDisplayName(source)} ${source.grade}`);
+    if(r.foundationWeapon)parts.push(`Weapon: ${r.foundationWeapon}`);
+    const pool=RULES.foundationPool(r,ruleContext());parts.push(`Foundations: ${(r.foundationRefs||[]).map(ref=>{const p=pool.find(p=>p.ref===ref);return p?`${p.name} [${p.core}] ${p.grade}`:'MISSING '+ref}).join('; ')}`);
+    if(r.schoolDescription)parts.push(`Teachings: ${r.schoolDescription}`);
+  }
+  if(r.facilityAssetId){const a=state.assets.find(a=>a.id===r.facilityAssetId);parts.push(`Facility: ${a?a.name+' '+a.grade:'MISSING'}`)}
+  if(r.focusRef){const [kind,id]=r.focusRef.split(':'),x=(kind==='asset'?state.assets:kind==='equipment'?state.equipment:state.skills).find(x=>x.id===id);parts.push(`Scrying focus: ${x?(x.name||x.detail)+' '+x.grade:'MISSING'}`)}
+  return parts.join(' / ');
+}
+function editSkill(id,newName){
+  const saved=state.skills.find(x=>x.id===id);if(!saved&&!newName)return;
+  const r=saved?JSON.parse(JSON.stringify(saved)):{id:uid('sk'),name:newName,grade:'F',detail:'',artisanType:'',artisanMaterial:'',specialized:false,notes:'',limiters:[]};const def=getSkillDef(r.name)||{};
   const spec=r.name.startsWith('Fighting Style');
   let detailHtml='';
   if(isArtisanSkill(r)){
@@ -325,14 +393,17 @@ function editSkill(id){
   const existing=(r.limiters||[]).slice(0,3);while(existing.length<3)existing.push({type:'',rank:1,detail:''});
   const limiterOptions='<option value="">None</option>'+(M.limiters||[]).map(l=>`<option value="${esc(l.id)}">${esc(l.id)}</option>`).join('');
   const limiterHtml=existing.map((l,i)=>`<div class="modal-form two"><label>Limiter ${i+1}<select class="mLimiterType" data-i="${i}">${limiterOptions}</select></label><label>Rank<select class="mLimiterRank" data-i="${i}"><option>1</option><option>2</option><option>3</option></select></label><label class="wide">Limiter detail<input class="mLimiterDetail" data-i="${i}" value="${esc(l.detail||'')}" placeholder="Assistant names, focused element, required equipment, etc."></label></div>`).join('');
-  openModal('Edit Skill',`<div class="modal-form"><label>Skill<input value="${esc(r.name)}" disabled></label><label>Grade<select id="mGrade">${gradeOptions(r.grade,def.creationMaxGrade||'A')}</select></label>${detailHtml}${spec?`<label class="checkbox-row"><input id="mSpecialized" type="checkbox" ${r.specialized?'checked':''}> Specialize this Fighting Style</label>`:''}<label>Notes<textarea id="mNotes" rows="3">${esc(r.notes||'')}</textarea></label><div><label>Limiters</label><small>At most 3 total limiter ranks. Each rank raises this skill's effect by one grade but not its purchased grade or normal ability grade/cooldown.</small>${limiterHtml}</div><div class="rule-callout"><strong>${esc(def.prerequisite?('Prerequisite: '+def.prerequisite):'No parsed prerequisite.')}</strong>${def.note?'<br>'+esc(def.note):''}${limiterAllowed(r)?'':'<br>This skill appears ineligible for limiters under the rules.'}<div class="rule-text">${esc(def.description||'').replace(/\n/g,'<br>')}</div></div></div>`,()=>{
+  openModal('Edit Skill',`<div class="modal-form"><label>Skill<input value="${esc(r.name)}" disabled></label><label>Grade<select id="mGrade">${gradeOptions(r.grade,def.creationMaxGrade||'A')}</select></label>${detailHtml}<div id="mRuleFields" class="modal-form">${skillRuleFields(r)}</div>${spec?`<label class="checkbox-row"><input id="mSpecialized" type="checkbox" ${r.specialized?'checked':''}> Specialize this Fighting Style</label>`:''}<label>Notes<textarea id="mNotes" rows="3">${esc(r.notes||'')}</textarea></label><div><label>Limiters</label><small>At most 3 total limiter ranks. Each rank raises this skill's effect by one grade but not its purchased grade or normal ability grade/cooldown.</small>${limiterHtml}</div><div class="rule-callout"><strong>${esc(def.prerequisite?('Prerequisite: '+def.prerequisite):'No parsed prerequisite.')}</strong>${def.note?'<br>'+esc(def.note):''}${limiterAllowed(r)?'':'<br>This skill appears ineligible for limiters under the rules.'}<div class="rule-text">${esc(def.description||'').replace(/\n/g,'<br>')}</div></div></div>`,()=>{
     r.grade=$('#mGrade').val();
     if(isArtisanSkill(r)){r.artisanType=$('#mArtisanType').val().trim();r.artisanMaterial=$('#mArtisanMaterial').val().trim();r.detail=r.artisanType}
     else r.detail=$('#mDetail').val().trim();
-    r.notes=$('#mNotes').val().trim();if(spec)r.specialized=$('#mSpecialized').is(':checked');
+    r.notes=$('#mNotes').val().trim();if(spec)r.specialized=$('#mSpecialized').is(':checked');readSkillRuleFields(r);
     r.limiters=[];$('.mLimiterType').each(function(){const type=$(this).val();if(!type)return;const i=$(this).data('i');r.limiters.push({type,rank:Number($(`.mLimiterRank[data-i="${i}"]`).val())||1,detail:$(`.mLimiterDetail[data-i="${i}"]`).val().trim()})});
+    const previous=state.skills;state.skills=previous.filter(x=>x.id!==r.id).concat(r);
+    const check=validateSkill(r);if(!check.ok){state.skills=previous;alert(check.message);return}
     closeModal();renderAll();
   });
+  $('#mRuleFields').on('change','#mFoundationStyle,#mParentSkill',function(){readSkillRuleFields(r);const parent=state.skills.find(s=>s.id===r.parentSkillId);if(RULES.suiteKind(r)==='mastery'&&parent){r.styleId=parent.styleId;r.foundationWeapon=parent.foundationWeapon}r.foundationRefs=[];$('#mRuleFields').html(skillRuleFields(r));refreshFancySelects()});
   existing.forEach((l,i)=>{$(`.mLimiterType[data-i="${i}"]`).val(l.type||'');$(`.mLimiterRank[data-i="${i}"]`).val(String(l.rank||1))});
 }
 function validateSkill(r){
@@ -341,44 +412,56 @@ function validateSkill(r){
   if(r.name==='Narrative Booster'&&!String(r.detail||'').trim())return {ok:false,message:'Narrative Booster needs the activity/title it represents in the Detail field'};
   const lt=limiterTotal(r);if(lt>3)return {ok:false,message:'No skill may have more than 3 total limiter ranks'};if(lt&&!limiterAllowed(r))return {ok:false,message:'This skill is not eligible for limiters'};if(lt&&gradeIndex(r.grade)+lt>gradeIndex('A'))return {ok:false,message:'Limiter effect would exceed the pre-Tribulation A-grade ceiling'};if((r.limiters||[]).some(l=>l.type==='Imbue')&&!(r.limiters||[]).some(l=>l.type==='Charges'))return {ok:false,message:'Imbue requires the Charges limiter'};if((r.limiters||[]).some(l=>l.type==='Focused')&&r.name!=='Telekinesis')return {ok:false,message:'Focused limiter is only for Telekinesis'};
   if(def.creationMaxGrade&&gradeIndex(r.grade)>gradeIndex(def.creationMaxGrade))return {ok:false,message:`Creation cap ${def.creationMaxGrade}`};
-  let p=def.prerequisite||'';const reqOffset=(p.match(/three grades higher/i)?3:p.match(/two grades higher/i)?2:p.match(/one grade higher/i)?1:0);
-  const statNames=['Strength','Precision','Intelligence','Vitality','Speed'];let checked=false;
+  const structuredError=RULES.skillCheck(r,ruleContext());if(structuredError)return {ok:false,message:structuredError};
+  let p=def.prerequisite||'';
+  const offsetFor=token=>{const clause=p.split(',').find(x=>x.includes(token))||'';return /three grades higher/i.test(clause)?3:/two grades higher/i.test(clause)?2:/one grade higher/i.test(clause)?1:0};
+  const statNames=['Strength','Precision','Intelligence','Vitality','Speed'];let checked=RULES.isStyle(r)||!!RULES.suiteKind(r)||!!RULES.facilities[r.name]||r.name.startsWith('Profession')||r.name.startsWith('Masterwork')||['Always Outnumbered','Villainous','Capacity','Chameleon','Scrying'].includes(r.name);
   if(r.name==='Weaken [Stat]'){
     const st=r.detail,need=GRADE_ORDER[gradeIndex(r.grade)+1]||'S';checked=true;if(!st||!state.stats[st]||!atLeast(state.stats[st],need))return {ok:false,message:`Requires the chosen stat (${st||'not specified'}) at ${need} or higher`};p=p.replace(/\[Stat to be weakened\][^,]*/i,'');
   }
   if(r.name==='Magic'&&state.origin.perk==='Versatile'&&state.origin.versatileItem==='catalyst'&&/Intelligence!/i.test(p)){
-    const need=GRADE_ORDER[gradeIndex(r.grade)+reqOffset]||'S';const alt=state.origin.versatileStat||'Intelligence';checked=true;
+    const need=GRADE_ORDER[gradeIndex(r.grade)+offsetFor('Intelligence!')]||'S';const alt=state.origin.versatileStat||'Intelligence';checked=true;
     if(!atLeast(state.stats.Intelligence,need)&&!atLeast(state.stats[alt],need))return {ok:false,message:`Requires Intelligence ${need}+ or ${alt} ${need}+ through Versatile`};
     p=p.replace(/Intelligence!/i,'');
   }
-  for(const st of statNames){if(new RegExp(st+'!','i').test(p)){checked=true;const need=gradeIndex(r.grade)+reqOffset;if(statIndex(state.stats[st])<STAT_ORDER.indexOf(GRADE_ORDER[need]||'S'))return {ok:false,message:`Requires ${st} ${GRADE_ORDER[need]||'S'} or higher`}}}
-  if(/Character!/i.test(p)){checked=true;const need=gradeIndex(r.grade)+reqOffset;if(gradeIndex(characterGrade())<need)return {ok:false,message:`Requires Character Grade ${GRADE_ORDER[need]||'S'} or higher`}}
-  if(/Standing!/i.test(p)){checked=true;let need=gradeIndex(r.grade)+(/one grade higher/i.test(p)?1:0);if(gradeIndex(standingGrade())<need)return {ok:false,message:`Requires Standing ${GRADE_ORDER[need]||'S'} or higher`}}
-  if(/Magic skill/i.test(p)){checked=true;const mg=bestSkillGradeExact('Magic');let need=gradeIndex(r.grade)+(/one grade higher/i.test(p)?1:0);if(!mg||gradeIndex(mg)<need)return {ok:false,message:`Requires Magic ${GRADE_ORDER[need]||'S'} or higher`}}
+  for(const st of statNames){if(new RegExp(st+'!','i').test(p)){checked=true;const need=gradeIndex(r.grade)+offsetFor(st+'!');if(statIndex(state.stats[st])<STAT_ORDER.indexOf(GRADE_ORDER[need]||'S'))return {ok:false,message:`Requires ${st} ${GRADE_ORDER[need]||'S'} or higher`}}}
+  if(/Character!/i.test(p)){checked=true;const need=gradeIndex(r.grade)+offsetFor('Character!');if(gradeIndex(characterGrade())<need)return {ok:false,message:`Requires Character Grade ${GRADE_ORDER[need]||'S'} or higher`}}
+  if(/Standing!/i.test(p)&&!['Always Outnumbered','Villainous'].includes(r.name)){checked=true;let need=gradeIndex(r.grade)+offsetFor('Standing!');if(gradeIndex(standingGrade())<need)return {ok:false,message:`Requires Standing ${GRADE_ORDER[need]||'S'} or higher`}}
+  if(/Magic skill/i.test(p)){checked=true;const mg=bestSkillGradeExact('Magic');let need=gradeIndex(r.grade)+offsetFor('Magic skill');if(!mg||gradeIndex(mg)<need)return {ok:false,message:`Requires Magic ${GRADE_ORDER[need]||'S'} or higher`}}
   if(/Fighting Style/i.test(p)&&!r.name.startsWith('Fighting Style')){checked=true;const fg=bestSkillGrade('Fighting Style');if(!fg)return {ok:false,message:'Requires a Fighting Style; review exact grade/core requirements'}}
   if(!p)return {ok:true,message:'No prerequisite'};
   return {ok:true,message:checked?'Core prerequisite met; review any additional text':'Manual prerequisite check'};
 }
 
 function editTechnique(id){
-  const r=id?state.techniques.find(x=>x.id===id):null;const styles=state.skills.filter(s=>s.name.startsWith('Fighting Style'));if(!styles.length){alert('Add a Fighting Style first.');return}
-  const row=r||{id:uid('tech'),styleId:styles[0].id,core:TECHS[0]?.name||'Accurate',grade:'F',detail:'',targetStat:'',baseCost:7,actionTagged:false,nonUpgrading:false};
-  const coreOptions=TECHS.map(t=>`<option value="${esc(t.name)}">${esc(t.name)} (${t.baseCost} pts)</option>`).join('')+'<option value="__custom">Custom core</option>';
-  const statOptions=['Strength','Precision','Intelligence','Vitality','Speed'].map(x=>`<option ${x===row.targetStat?'selected':''}>${x}</option>`).join('');
-  openModal(r?'Edit Technique':'Add Technique',`<div class="modal-form"><label>Fighting Style<select id="mStyle">${styles.map(s=>`<option value="${s.id}" ${s.id===row.styleId?'selected':''}>${esc(skillDisplayName(s))} ${s.grade}</option>`).join('')}</select></label><label>Technique Core<select id="mCore">${coreOptions}</select></label><label id="mCustomCoreWrap" class="hidden">Custom Core Name<input id="mCustomCore"></label><label>Technique Name / Flavor<input id="mTechDetail" value="${esc(row.detail||'')}" placeholder="Optional custom technique name"></label><label id="mTechDrainWrap" class="hidden">Drain Stat<select id="mTechDrainStat"><option value="">Choose stat...</option>${statOptions}</select><small>Drain must name the stat it weakens.</small></label><label>Grade<select id="mTechGrade">${gradeOptions(row.grade)}</select></label><div id="mTechRule" class="rule-callout"></div></div>`,()=>{const c=$('#mCore').val();const def=TECHS.find(t=>t.name===c);row.styleId=$('#mStyle').val();row.core=c==='__custom'?($('#mCustomCore').val().trim()||'Custom'):c;row.detail=$('#mTechDetail').val().trim();row.targetStat=row.core==='Drain'?$('#mTechDrainStat').val():'';if(row.core==='Drain'&&!row.targetStat){alert('Drain must specify which stat it weakens.');return}row.grade=$('#mTechGrade').val();row.baseCost=def?def.baseCost:7;row.actionTagged=def?def.actionTagged:false;row.nonUpgrading=def?def.nonUpgrading:false;const style=state.skills.find(s=>s.id===row.styleId);if(style&&style.specialized)row.grade=style.grade;if(!r)state.techniques.push(row);closeModal();renderAll()});
-  $('#mCore').val(TECHS.some(t=>t.name===row.core)?row.core:'__custom').on('change',function(){const d=TECHS.find(t=>t.name===this.value);$('#mCustomCoreWrap').toggleClass('hidden',this.value!=='__custom');$('#mTechDrainWrap').toggleClass('hidden',this.value!=='Drain');$('#mTechRule').text(d?d.description:'Custom technique requires manual approval.');});$('#mCore').trigger('change');$('#mTechDrainStat').val(row.targetStat||'');if(!TECHS.some(t=>t.name===row.core)){$('#mCustomCore').val(row.core)}
+  const saved=state.techniques.find(x=>x.id===id),styles=state.skills.filter(RULES.isStyle);if(!styles.length){alert('Add a Fighting Style first.');return}
+  const row=saved?{...saved}:{id:uid('tech'),styleId:styles[0].id,core:'Accurate',grade:'F',detail:'',targetStat:'',baseCost:7};
+  const statOptions=RULES.stats.map(x=>`<option ${x===row.targetStat?'selected':''}>${x}</option>`).join('');
+  openModal(saved?'Edit Technique':'Add Technique',`<div class="modal-form">${ruleSelect('mStyle','Fighting Style',styles.map(s=>({value:s.id,label:`${skillDisplayName(s)} ${s.grade}`})),row.styleId)}<label>Technique Core<select class="no-enhance" id="mCore"></select></label><label id="mCustomCoreWrap">Custom Core Name<input id="mCustomCore" value="${esc(row.core)}"></label><label>Technique name / defining damage or resistance type<input id="mTechDetail" value="${esc(row.detail||'')}"></label><label id="mTechDrainWrap">Drain Stat<select id="mTechDrainStat"><option value="">Choose...</option>${statOptions}</select></label><label>Grade<select class="no-enhance" id="mTechGrade"></select></label><div id="mTechRule" class="rule-callout"></div></div>`,()=>{
+    const core=$('#mCore').val(),def=TECHS.find(t=>t.name===core),style=state.skills.find(s=>s.id===$('#mStyle').val());
+    Object.assign(row,{styleId:style?.id,core:core==='__custom'?$('#mCustomCore').val().trim():core,detail:$('#mTechDetail').val().trim(),targetStat:core==='Drain'?$('#mTechDrainStat').val():'',grade:def?.nonUpgrading?'F':style?.specialized?style.grade:$('#mTechGrade').val(),baseCost:def?.baseCost||7,actionTagged:!!def?.actionTagged,nonUpgrading:!!def?.nonUpgrading});
+    if(!row.core){alert('Name the custom technique core.');return}const error=RULES.techniqueCheck(row,ruleContext());if(error){alert(error);return}
+    state.techniques=state.techniques.filter(t=>t.id!==row.id).concat(row);closeModal();renderAll();
+  });
+  const updateCore=()=>{const def=TECHS.find(t=>t.name===$('#mCore').val()),style=state.skills.find(s=>s.id===$('#mStyle').val()),old=$('#mTechGrade').val()||row.grade;$('#mCustomCoreWrap').toggleClass('hidden',$('#mCore').val()!=='__custom');$('#mTechDrainWrap').toggleClass('hidden',$('#mCore').val()!=='Drain');const g=def?.nonUpgrading?'F':style?.specialized?style.grade:old;$('#mTechGrade').html(gradeOptions(g,def?.nonUpgrading?'F':style?.grade||'F')).prop('disabled',!!def?.nonUpgrading||!!style?.specialized);$('#mTechRule').text(def?.description||'Custom core requires manual approval.')};
+  const updateStyle=()=>{const style=state.skills.find(s=>s.id===$('#mStyle').val()),old=$('#mCore').val()||row.core;const allowed=TECHS.filter(t=>!(style?.specialized&&t.name==='Generalist'));$('#mCore').html(allowed.map(t=>`<option value="${esc(t.name)}">${esc(t.name)} (${t.baseCost} pts)</option>`).join('')+'<option value="__custom">Custom core</option>');$('#mCore').val(allowed.some(t=>t.name===old)?old:TECHS.some(t=>t.name===old)?'Accurate':'__custom');updateCore()};
+  $('#mStyle').on('change',()=>{updateStyle();refreshFancySelects()});$('#mCore').on('change',()=>{updateCore();refreshFancySelects()});updateStyle();$('#mTechDrainStat').val(row.targetStat||'');
 }
 function renderTechniques(){
-  $('#techniqueList').html(state.techniques.map(r=>{const style=state.skills.find(s=>s.id===r.styleId);const tg=techniqueGrade(r);const invalid=!style||gradeIndex(tg)>gradeIndex(style.grade)||(r.core==='Drain'&&!r.targetStat);return `<div class="selected-row ${invalid?'invalid':''}"><div><div class="row-title">${esc(techniqueDisplayName(r))} <span class="pill">${esc(r.core)}</span></div><div class="row-meta">${tg} // ${techniqueCost(r)} pts // ${style?esc(skillDisplayName(style)):'missing style'}${style?.specialized?' // follows Specialized Style grade':''}${r.actionTagged?' // +1 action effect':''}${r.core==='Drain'&&!r.targetStat?' // Drain stat required':''}</div></div><div class="row-actions"><button class="ui-btn small ghost" data-edit-tech="${r.id}">Edit</button><button class="ui-btn small danger" data-remove-tech="${r.id}">×</button></div></div>`}).join('')||'<div class="muted">No techniques added.</div>');
+  $('#techniqueList').html(state.techniques.map(r=>{const style=state.skills.find(s=>s.id===r.styleId);const tg=techniqueGrade(r);const ruleError=RULES.techniqueCheck(r,ruleContext());const invalid=!!ruleError;return `<div class="selected-row ${invalid?'invalid':''}"><div><div class="row-title">${esc(techniqueDisplayName(r))} <span class="pill">${esc(r.core)}</span></div><div class="row-meta">${tg} // ${techniqueCost(r)} pts // ${style?esc(skillDisplayName(style)):'missing style'}${style?.specialized?' // follows Specialized Style grade':''}${r.actionTagged?' // +1 action effect':''}${ruleError?' // '+esc(ruleError):''}</div></div><div class="row-actions"><button class="ui-btn small ghost" data-edit-tech="${r.id}">Edit</button><button class="ui-btn small danger" data-remove-tech="${r.id}">×</button></div></div>`}).join('')||'<div class="muted">No techniques added.</div>');
 }
 function editAffinity(id){
-  const r=id?state.affinities.find(x=>x.id===id):null;const row=r||{id:uid('aff'),core:'Element',grade:'F',detail:'',targetStat:'',baseCost:7,actionTagged:false};
-  const options=AFFS.map(a=>`<option value="${esc(a.name)}">${esc(a.name)} (${a.baseCost} pts)</option>`).join('')+'<option value="__freeform">Freeform / elemental affinity</option>';
-  const statOptions=['Strength','Precision','Intelligence','Vitality','Speed'].map(x=>`<option ${x===row.targetStat?'selected':''}>${x}</option>`).join('');
-  openModal(r?'Edit Affinity':'Add Affinity',`<div class="modal-form"><label>Affinity Core<select id="mAffCore">${options}</select></label><label>Type / Flavor<input id="mAffDetail" value="${esc(row.detail||'')}" placeholder="Fire, lightning, metal, custom name..."></label><label id="mAffDrainWrap" class="hidden">Drain Stat<select id="mAffDrainStat"><option value="">Choose stat...</option>${statOptions}</select><small>Drain must name the stat it weakens.</small></label><label>Grade<select id="mAffGrade">${gradeOptions(row.grade)}</select></label><div id="mAffRule" class="rule-callout"></div></div>`,()=>{const c=$('#mAffCore').val();const d=AFFS.find(a=>a.name===c);row.core=c==='__freeform'?'Freeform':c;row.detail=$('#mAffDetail').val().trim();row.targetStat=row.core==='Drain'?$('#mAffDrainStat').val():'';if(row.core==='Drain'&&!row.targetStat){alert('Drain must specify which stat it weakens.');return}row.grade=$('#mAffGrade').val();row.baseCost=d?d.baseCost:7;row.actionTagged=d?d.actionTagged:false;if(!r)state.affinities.push(row);closeModal();renderAll()});
-  const found=AFFS.some(a=>a.name===row.core);$('#mAffCore').val(found?row.core:'__freeform').on('change',function(){const d=AFFS.find(a=>a.name===this.value);$('#mAffDrainWrap').toggleClass('hidden',this.value!=='Drain');$('#mAffRule').text(d?d.description:'A freeform affinity costs 7 points per grade and should be used when the desired affinity is not one of the listed mechanical cores.');}).trigger('change');$('#mAffDrainStat').val(row.targetStat||'');
+  const saved=state.affinities.find(x=>x.id===id),row=saved?{...saved}:{id:uid('aff'),core:'Element',grade:'F',detail:'',targetStat:'',baseCost:7,actionTagged:false};
+  const options=AFFS.map(a=>({value:a.name,label:`${a.name} (${a.baseCost} pts)`})).concat({value:'__freeform',label:'Freeform affinity'});
+  openModal(saved?'Edit Affinity':'Add Affinity',`<div class="modal-form">${ruleSelect('mAffCore','Affinity core',options,AFFS.some(a=>a.name===row.core)?row.core:'__freeform')}<label>Type / flavor (required for Element, Blight, Contact and Freeform)<input id="mAffDetail" value="${esc(row.detail||'')}"></label><div id="mAffDrainWrap">${ruleSelect('mAffDrainStat','Drain stat',RULES.stats,row.targetStat)}</div><label>Grade<select class="no-enhance" id="mAffGrade">${gradeOptions(row.grade)}</select></label><div id="mAffRule" class="rule-callout"></div></div>`,()=>{
+    const core=$('#mAffCore').val(),def=AFFS.find(a=>a.name===core);Object.assign(row,{core:core==='__freeform'?'Freeform':core,detail:$('#mAffDetail').val().trim(),targetStat:core==='Drain'?$('#mAffDrainStat').val():'',grade:def?.nonUpgrading?'F':$('#mAffGrade').val(),baseCost:def?.baseCost||7,actionTagged:!!def?.actionTagged});
+    const error=RULES.affinityCheck(row,ruleContext());if(error){alert(error);return}state.affinities=state.affinities.filter(a=>a.id!==row.id).concat(row);closeModal();renderAll();
+  });
+  $('#mAffCore').on('change',function(){const def=AFFS.find(a=>a.name===this.value),old=$('#mAffGrade').val()||'F';$('#mAffDrainWrap').toggleClass('hidden',this.value!=='Drain');$('#mAffGrade').html(gradeOptions(def?.nonUpgrading?'F':old,def?.nonUpgrading?'F':'A')).prop('disabled',!!def?.nonUpgrading);$('#mAffRule').text((def?.description||'A defined freeform affinity costs 7 points per grade.')+' Requires Intelligence one grade higher; advanced cores also require Magic of at least the affinity grade.');refreshFancySelects()}).trigger('change');
 }
-function renderAffinities(){$('#affinityList').html(state.affinities.map(r=>`<div class="selected-row ${r.core==='Drain'&&!r.targetStat?'invalid':''}"><div><div class="row-title">${esc(affinityDisplayName(r))} <span class="pill">${esc(r.core)}</span></div><div class="row-meta">${r.grade} // ${affinityCost(r)} pts${r.actionTagged?' // +1 action effect':''}${r.core==='Drain'&&!r.targetStat?' // Drain stat required':''}</div></div><div class="row-actions"><button class="ui-btn small ghost" data-edit-aff="${r.id}">Edit</button><button class="ui-btn small danger" data-remove-aff="${r.id}">×</button></div></div>`).join('')||'<div class="muted">No affinities added.</div>')}
+function renderAffinities(){
+  $('#affinityList').html(state.affinities.map(r=>{const error=RULES.affinityCheck(r,ruleContext());return `<div class="selected-row ${error?'invalid':''}"><div><div class="row-title">${esc(affinityDisplayName(r))} <span class="pill">${esc(r.core)}</span></div><div class="row-meta">${r.grade} // ${affinityCost(r)} pts${r.actionTagged?' // +1 action effect':''}${error?' // '+esc(error):''}</div></div><div class="row-actions"><button class="ui-btn small ghost" data-edit-aff="${r.id}">Edit</button><button class="ui-btn small danger" data-remove-aff="${r.id}">×</button></div></div>`}).join('')||'<div class="muted">No affinities added.</div>');
+}
 
 function versatileAppliesToType(t){
   if(state.origin.perk!=='Versatile'||!t)return false;const target=state.origin.versatileItem;
@@ -481,8 +564,8 @@ function renumberSteps(){
 function editAsset(id){
   const r=id?state.assets.find(x=>x.id===id):null;const row=r||{id:uid('asset'),name:'',grade:'F',cost:7,notes:'',createsTitle:true,titleName:'',titleEquipped:false};
   if(row.createsTitle===undefined)row.createsTitle=true;
-  openModal(r?'Edit Asset':'Add Asset',`<div class="modal-form"><label>Name<input id="mAssetName" value="${esc(row.name)}" placeholder="Family connection, damaged townhouse, old vehicle..."></label><label>Grade<select id="mAssetGrade"><option>F</option></select></label><label>Point Cost<input id="mAssetCost" type="number" min="0" step="1" value="${Number(row.cost)||0}"><small>7 is the normal F Asset skill price. Use the document's listed special property/training prices or an approved override where appropriate.</small></label><label class="checkbox-row"><input id="mAssetCreatesTitle" type="checkbox" ${row.createsTitle!==false?'checked':''}> This Asset creates a fitting acquired title</label><div id="mAssetTitleWrap" class="modal-form"><label>Acquired Title<input id="mAssetTitle" value="${esc(row.titleName||'')}" placeholder="Leave blank to use the Asset name"><small>Use the title the possession or connection logically gives the character, such as Noble Scion, Shopkeeper, or Vehicle Owner.</small></label><label class="checkbox-row"><input id="mAssetTitleEquipped" type="checkbox" ${row.titleEquipped?'checked':''}> Equip this title</label></div><label>Condition / limits / notes<textarea id="mAssetNotes" rows="4">${esc(row.notes||'')}</textarea></label></div>`,()=>{
-    row.name=$('#mAssetName').val().trim()||'Unnamed Asset';row.grade='F';row.cost=Math.max(0,Number($('#mAssetCost').val())||0);row.notes=$('#mAssetNotes').val().trim();row.createsTitle=$('#mAssetCreatesTitle').is(':checked');row.titleName=row.createsTitle?($('#mAssetTitle').val().trim()||row.name):'';row.titleEquipped=row.createsTitle&&$('#mAssetTitleEquipped').is(':checked');if(!r)state.assets.push(row);closeModal();renderAll()
+  openModal(r?'Edit Asset':'Add Asset',`<div class="modal-form"><label>Name<input id="mAssetName" value="${esc(row.name)}" placeholder="Family connection, damaged townhouse, old vehicle..."></label><label>Grade<select id="mAssetGrade"><option>F</option></select></label>${ruleSelect('mAssetKind','Asset type / facility purpose',['Other',...new Set(Object.values(RULES.facilities))],row.assetKind||'Other')}<label>Point Cost<input id="mAssetCost" type="number" min="0" step="1" value="${Number(row.cost)||0}"><small>7 is the normal F Asset skill price. Use the document's listed special property/training prices or an approved override where appropriate.</small></label><label class="checkbox-row"><input id="mAssetCreatesTitle" type="checkbox" ${row.createsTitle!==false?'checked':''}> This Asset creates a fitting acquired title</label><div id="mAssetTitleWrap" class="modal-form"><label>Acquired Title<input id="mAssetTitle" value="${esc(row.titleName||'')}" placeholder="Leave blank to use the Asset name"><small>Use the title the possession or connection logically gives the character, such as Noble Scion, Shopkeeper, or Vehicle Owner.</small></label><label class="checkbox-row"><input id="mAssetTitleEquipped" type="checkbox" ${row.titleEquipped?'checked':''}> Equip this title</label></div><label>Condition / limits / notes<textarea id="mAssetNotes" rows="4">${esc(row.notes||'')}</textarea></label></div>`,()=>{
+    row.name=$('#mAssetName').val().trim()||'Unnamed Asset';row.assetKind=$('#mAssetKind').val()||'Other';row.grade='F';row.cost=Math.max(0,Number($('#mAssetCost').val())||0);row.notes=$('#mAssetNotes').val().trim();row.createsTitle=$('#mAssetCreatesTitle').is(':checked');row.titleName=row.createsTitle?($('#mAssetTitle').val().trim()||row.name):'';row.titleEquipped=row.createsTitle&&$('#mAssetTitleEquipped').is(':checked');if(!r)state.assets.push(row);closeModal();renderAll()
   });
   $('#mAssetCreatesTitle').on('change',function(){$('#mAssetTitleWrap').toggleClass('hidden',!this.checked)}).trigger('change');
 }
@@ -503,8 +586,21 @@ function abilityCalc(r){const pool=componentPool().filter(c=>r.components.includ
 function renderAbilities(){$('#abilityList').html(state.abilities.map(r=>{const c=abilityCalc(r);return `<div class="selected-row ${c.actions>3?'invalid':''}"><div><div class="row-title">${esc(r.name)} <span class="pill">GRADE ${c.grade}</span><span class="pill">${c.cooldown==null?'?':c.cooldown} POST CD</span><span class="pill">${c.actions} ACTION${c.actions===1?'':'S'}</span></div><div class="row-meta">${esc(c.pool.map(x=>x.label+' '+x.grade).join(', ')||'No components')}${r.notes?' // '+esc(r.notes):''}</div>${r.description?`<div class="muted">${esc(r.description)}</div>`:''}</div><div class="row-actions"><button class="ui-btn small ghost" data-edit-ability="${r.id}">Edit</button><button class="ui-btn small danger" data-remove-ability="${r.id}">×</button></div></div>`}).join('')||'<div class="muted">No abilities created.</div>')}
 
 function editTitle(){openModal('Add Title',`<div class="modal-form"><label>Title<input id="mTitle"></label><label class="checkbox-row"><input id="mTitleEquipped" type="checkbox"> Equipped</label><label>Notes<input id="mTitleNotes" placeholder="Optional"></label></div>`,()=>{const n=$('#mTitle').val().trim();if(n)state.titles.push({id:uid('title'),name:n,notes:$('#mTitleNotes').val().trim(),equipped:$('#mTitleEquipped').is(':checked')});closeModal();renderAll()})}
+function editCriminalTitle(id){
+  const existing=(state.criminalTitles||[]).find(t=>t.id===id),r=existing||{id:uid('crime'),name:'Thief',grade:'F',notes:''};
+  openModal(existing?'Edit Criminal Title':'Record Criminal Title',`<div class="modal-form">${ruleSelect('mCrimeName','Criminal title',Object.keys(RULES.crimes),r.name)}<label>Grade<select class="no-enhance" id="mCrimeGrade">${gradeOptions(r.grade,'S')}</select></label><div id="mCrimeDefinition" class="rule-callout"></div><label>Staff award / clearance notes<textarea id="mCrimeNotes" rows="3">${esc(r.notes||'')}</textarea></label><small>Record an earned title, not a self-awarded prerequisite. Criminal titles are always equipped. Villainous needs C Standing and a criminal title at C or higher.</small></div>`,()=>{
+    const name=$('#mCrimeName').val(),grade=$('#mCrimeGrade').val();if(!Object.hasOwn(RULES.crimes,name))return;
+    const duplicate=state.criminalTitles.find(t=>t.name===name&&t.id!==r.id);if(duplicate){alert('That criminal title already exists. Edit its grade to record repeat offenses.');return}
+    const entry={...r,name,grade,notes:$('#mCrimeNotes').val().trim()};state.criminalTitles=state.criminalTitles.filter(t=>t.id!==r.id).concat(entry);closeModal();renderAll();
+  });
+  $('#mCrimeName').on('change',function(){$('#mCrimeDefinition').text(RULES.crimes[this.value]||'')}).trigger('change');
+}
+function renderCriminalTitles(){
+  $('#criminalTitleList').html((state.criminalTitles||[]).map(t=>`<div class="selected-row"><div><div class="row-title">${esc(t.name)} ${esc(t.grade)} <span class="pill">MANDATORY / EQUIPPED</span></div><div class="row-meta">${esc(t.notes||RULES.crimes[t.name]||'Unknown criminal title')}</div></div><div class="row-actions"><button class="ui-btn small ghost" data-edit-crime="${esc(t.id)}">Edit</button><button class="ui-btn small danger" data-remove-crime="${esc(t.id)}">Correct / clear record</button></div></div>`).join('')||'<div class="muted">No criminal titles recorded.</div>');
+}
 function automaticTitles(){
   const arr=[],seen=new Set();const push=t=>{const key=String(t.name||'').trim().toLowerCase();if(!key||seen.has(key))return;seen.add(key);arr.push(t)};
+  (state.criminalTitles||[]).forEach(t=>push({name:`${t.name} ${t.grade}`,source:'Criminal title',equipped:true}));
   const treeIds=state.origin.evolutionPath==='hybrid'?[state.origin.tree,...(state.origin.parents||[])]:[state.origin.tree];treeIds.filter(Boolean).forEach(id=>{const t=M.trees.find(x=>x.id===id);if(t)push({name:t.name,source:'Racial Tree',equipped:true})});
   if(state.identity.raceTitle)push({name:state.identity.raceTitle,source:'Race',equipped:true});
   if(state.origin.evolutionPath==='hybrid')push({name:'Hybrid',source:'Racial Path',equipped:true});
@@ -514,6 +610,7 @@ function automaticTitles(){
   return arr;
 }
 function renderTitles(){
+  renderCriminalTitles();
   const auto=automaticTitles();
   $('#titleList').html(auto.map(t=>{let action='';if(t.classTitle)action=`<div class="row-actions"><button class="ui-btn small ghost" data-equip-class="${t.id}">${t.equipped?'Unequip':'Equip'}</button></div>`;else if(t.assetTitle)action=`<div class="row-actions"><button class="ui-btn small ghost" data-equip-asset-title="${t.id}">${t.equipped?'Unequip':'Equip'}</button></div>`;return `<div class="selected-row"><div><div class="row-title">${esc(t.name)} <span class="pill">${esc(t.source)}</span>${t.equipped?'<span class="pill">EQUIPPED</span>':'<span class="pill">ACQUIRED</span>'}</div></div>${action}</div>`}).join('')+state.titles.map(t=>`<div class="selected-row"><div><div class="row-title">${esc(t.name)} ${t.equipped?'<span class="pill">EQUIPPED</span>':'<span class="pill">ACQUIRED</span>'}</div><div class="row-meta">${esc(t.notes||'Custom title')}</div></div><div class="row-actions"><button class="ui-btn small ghost" data-equip-title="${t.id}">${t.equipped?'Unequip':'Equip'}</button><button class="ui-btn small danger" data-remove-title="${t.id}">×</button></div></div>`).join(''));
 }
@@ -601,7 +698,7 @@ function renderRaceCatalog(){
   const stages=['Mundane','Intermediate','Ascended'];const groups=stages.map(stage=>{const rs=rows.filter(r=>r.stage===stage);if(!rs.length)return'';return `<details class="race-stage" ${stage==='Mundane'?'open':''}><summary><span>${stage}</span><b>${rs.length} templates</b></summary><div class="race-stage-body">${rs.map(r=>{const st=raceStatus(r);const selected=state.origin.raceId===r.id;const img=r.images?.[0]?`<img loading="lazy" src="${esc(r.images[0])}" alt="">`:'';return `<details class="race-card ${selected?'selected':''}"><summary>${img}<div><strong>${esc(r.name)}</strong><span>${esc(r.tree)} // ${st.total?st.passed+'/'+st.total+' verified':'manual template'}${r.evolvesInto?' // → '+esc(r.evolvesInto):''}</span></div></summary><div class="race-card-body"><p>${esc(r.description||'No description recorded.')}</p><div class="race-card-actions"><button type="button" class="ui-btn small" data-select-race="${esc(r.id)}">Use ${esc(r.name)}</button><a class="ui-btn small ghost" href="races.html#${encodeURIComponent(r.id)}">Open Compendium</a></div></div></details>`}).join('')}</div></details>`}).join('');$('#raceCatalog').html(groups||'<div class="rule-callout">No race templates match this filter.</div>');
 }
 function refreshFancySelects(){
-  if(!$.fn.select2)return;$('select').each(function(){const $s=$(this);if($s.hasClass('no-enhance'))return;try{if($s.hasClass('select2-hidden-accessible'))$s.select2('destroy')}catch(_){};const inModal=$s.closest('#modal').length;const searchable=$s.find('option').length>10;$s.select2({width:'100%',minimumResultsForSearch:searchable?0:Infinity,dropdownParent:inModal?$('#modal'):$(document.body)});});
+  if(!$.fn.select2)return;$('select').each(function(){const $s=$(this);if($s.hasClass('no-enhance'))return;if($s.hasClass('select2-hidden-accessible')){$s.trigger('change.select2');return}const inModal=$s.closest('#modal').length;const searchable=$s.find('option').length>10;$s.select2({width:'100%',minimumResultsForSearch:searchable?0:Infinity,dropdownParent:inModal?$('#modal'):$(document.body)});});
 }
 function racialValidation(){
   if(state.origin.evolutionPath==='variant')return {ok:true,items:[]};
@@ -618,17 +715,20 @@ function racialValidation(){
 }
 function validation(){
   const errors=[],warnings=[];if(!state.identity.name.trim())errors.push('Character Name is required.');if(!state.identity.raceTitle.trim()&&!state.origin.tree)errors.push('A racial title is required.');
+  (state.criminalTitles||[]).forEach(t=>{if(!Object.hasOwn(RULES.crimes,t.name)||!GRADE_ORDER.includes(t.grade))errors.push('Criminal titles must be Thief, Murder, Vandal, or Abuser with a valid grade.')});
+  if(state.skills.some(s=>s.name==='Villainous'))warnings.push('Villainous: confirm the C+ criminal title was awarded by staff. Use only as an outnumbered antagonist against good-guy player characters.');
   const langs=state.identity.languages||[];if(!String(langs[0]||'').trim()||!String(langs[1]||'').trim())errors.push('Two starting languages must be specified.');if(state.origin.type==='native'&&state.origin.perk!=='Chosen Path'&&!String(state.origin.freeSkillDetail||'').trim())errors.push('Native Area Knowledge must specify an area and/or locale.');
   const rem=remainingPoints(),scoop=Number(state.origin.scoopPoints)||0;if(rem<0)errors.push(`Build is ${Math.abs(rem)} points over budget.`);else if(rem!==0&&!(scoop>0&&rem<7))errors.push(`All creation points must be spent. ${rem} points remain.`);else if(rem>0)warnings.push(`${rem} point Scoop remainder is unspent; this is allowed when it cannot be spent in 7-point increments.`);
   Object.entries(state.stats).forEach(([s,g])=>{if(statIndex(g)>statIndex('B'))errors.push(`${s} exceeds the B creation cap.`)});
   state.skills.forEach(r=>{const v=validateSkill(r);if(!v.ok)errors.push(`${r.name} ${r.grade}: ${v.message}`);else if(v.message.includes('Manual'))warnings.push(`${r.name}: ${v.message}.`)});
-  state.techniques.forEach(r=>{const style=state.skills.find(s=>s.id===r.styleId);if(!style)errors.push(`${techniqueDisplayName(r)}: missing Fighting Style.`);else if(gradeIndex(techniqueGrade(r))>gradeIndex(style.grade))errors.push(`${techniqueDisplayName(r)} exceeds its Fighting Style grade.`);if(r.core==='Drain'&&!r.targetStat)errors.push('Drain technique must specify the stat it drains.');});
-  state.affinities.forEach(r=>{if(r.core==='Drain'&&!r.targetStat)errors.push('Drain affinity must specify the stat it drains.');});
+  state.techniques.forEach(r=>{const error=RULES.techniqueCheck(r,ruleContext());if(error)errors.push(`${techniqueDisplayName(r)}: ${error}.`)});
+  state.affinities.forEach(r=>{const error=RULES.affinityCheck(r,ruleContext());if(error)errors.push(`${affinityDisplayName(r)}: ${error}.`)});
   state.equipment.forEach(r=>{const v=equipmentValidation(r);if(!v.ok)errors.push(`${r.name} ${r.grade}: ${v.msg}.`);if(r.artisanDiscountSkillId&&!String(r.material||'').trim())warnings.push(`${r.name}: record its material/construction so the Artisan discount can be reviewed.`)});
   state.assets.forEach(r=>{if(r.grade!=='F')errors.push(`${r.name}: starting Assets are capped at F.`)});
   const rv=racialValidation();if(!rv.ok)rv.items.filter(x=>!x.pass).forEach(x=>errors.push(`Racial requirement unmet: ${x.msg}.`));
   const race=activeRaceTemplate();if(race){const rs=raceStatus(race);if(rs.failed.length&&!String(state.origin.raceOverrideReason||'').trim())rs.failed.forEach(x=>errors.push(`${race.name} template unmet: ${x.msg}.`));else if(rs.failed.length)warnings.push(`${race.name} uses a race-template review/equivalency note: ${state.origin.raceOverrideReason}`);if(rs.manual.length)warnings.push(`${race.name} has ${rs.manual.length} template requirement note(s) that need human review.`)}
   if(state.origin.perk==='Chosen Path'&&!state.origin.chosenPathSkill)errors.push('Chosen Path is selected but no replacement skill has been chosen.');if(state.origin.perk==='Chosen Path'&&state.origin.chosenPathSkill&&chosenPathDetailInfo(state.origin.chosenPathSkill)&&!String(state.origin.chosenPathDetail||'').trim())errors.push(`${state.origin.chosenPathSkill} chosen through Chosen Path must specify what it applies to.`);
+  if(state.origin.perk==='Chosen Path'&&state.origin.chosenPathSkill){const free={name:state.origin.chosenPathSkill,detail:state.origin.chosenPathDetail||''};if(RULES.price(free,7)!==7)errors.push('Chosen Path must use a 7-point skill subtype, not a higher-priced Resistance or movement option.');}
   if(state.origin.tree==='monster')warnings.push('Monster tree is a hard-mode antagonist path and is discouraged for new players.');
   if(!state.abilities.length)warnings.push('No abilities are set up. A finished character sheet should include at least one ability.');
   state.abilities.forEach(r=>{const c=abilityCalc(r);if(c.actions>3)warnings.push(`${r.name} is estimated at ${c.actions} actions and would not fit the standard 3-action Advanced Rules combat post without an override.`)});
@@ -648,6 +748,8 @@ function generateSheet(){
   const lines=[];const add=(label,val)=>{if(val!==undefined&&val!==null&&String(val).trim()!=='')lines.push(`${label}: ${val}`)};const uniq=a=>[...new Set(a.filter(Boolean))];
   add('Character Name',state.identity.name);add("Rp'er Name",state.identity.player);add('Character Image',state.identity.imageUrl);
   const autoTitles=automaticTitles();const autoEquipped=autoTitles.filter(x=>x.equipped).map(x=>x.name);const customEquipped=state.titles.filter(x=>x.equipped).map(x=>x.name);const equipped=uniq([...autoEquipped,...customEquipped]);const acquiredAll=uniq([...autoTitles.filter(x=>!x.equipped).map(x=>x.name),...state.titles.filter(x=>!x.equipped).map(x=>x.name)]);const acquired=acquiredAll.filter(x=>!equipped.includes(x));if(equipped.length)add('Titles',equipped.join(', '));if(acquired.length)add('Acquired Titles',acquired.join(', '));
+  add('Recorded Evolution Tier',state.origin.evolutionTier||'mundane');
+  if((state.criminalTitles||[]).length){lines.push('Criminal Titles (mandatory equipped):');state.criminalTitles.forEach(t=>lines.push(`${t.name} ${t.grade}${t.notes?' - '+t.notes:''}`))}
   const perks=[];if(state.origin.perk){if(state.origin.perk==='Versatile'){const label={melee:'Melee Weapons',ranged:'Ranged Weapons',catalyst:'Catalysts'}[state.origin.versatileItem]||state.origin.versatileItem;perks.push(`Versatile [${label} may use ${state.origin.versatileStat} as an alternate governing stat]`)}else perks.push(state.origin.perk)}state.classes.filter(c=>c.equipped).forEach(c=>{const d=M.classRules.find(x=>x.id===c.id);if(d?.perk)perks.push(d.perk)});if(perks.length)add('Perks',perks.join(', '));
   const feat=[];if(state.identity.features.trim())feat.push(state.identity.features.trim());if(state.origin.evolutionPath==='hybrid')feat.push(`Mixed Race (${[state.origin.tree,...state.origin.parents].map(id=>M.trees.find(t=>t.id===id)?.name).filter(Boolean).join(' / ')})`);if(feat.length)add('Features',feat.join('; '));
   add('Points At Start',pointsAtStart());add('Points Spent',totalSpent());add('Points Earned',pointsEarned());const rem=remainingPoints();if(rem)add('Points Not Spent',rem);
@@ -656,7 +758,7 @@ function generateSheet(){
 
   const free=freeSkillDisplay();const skillLines=[];if(free)skillLines.push(`${free.name} ${free.grade} (free: ${free.note})`);
   const usedTech=new Set();let affinitiesPlaced=false;
-  const skillLine=r=>{let x=`${skillDisplayName(r)} ${r.grade}${limiterTotal(r)?'('+skillEffectGrade(r)+')':''}${r.specialized?' [Specialize]':''}`;if(limiterTotal(r))x+=` - Limiters: ${(r.limiters||[]).map(l=>l.type+' '+l.rank+(l.detail?' ['+l.detail+']':'')).join(', ')}`;if(r.notes)x+=` - ${r.notes}`;return x};
+  const skillLine=r=>{let x=`${skillDisplayName(r)} ${r.grade}${limiterTotal(r)?'('+skillEffectGrade(r)+')':''}${r.specialized?' [Specialize]':''}`;if(limiterTotal(r))x+=` - Limiters: ${(r.limiters||[]).map(l=>l.type+' '+l.rank+(l.detail?' ['+l.detail+']':'')).join(', ')}`;const ruleSummary=skillRuleSummary(r);if(ruleSummary)x+=` - ${ruleSummary}`;if(r.notes)x+=` - ${r.notes}`;return x};
   const techLine=t=>{const name=techniqueDisplayName(t);const core=(t.detail&&t.core!=='Drain')?` [Core: ${t.core}]`:'';return `  [Technique] ${name} ${techniqueGrade(t)}${core}`};
   const affLine=a=>{const name=affinityDisplayName(a);const core=(a.detail&&a.core!=='Drain')?` [Core: ${a.core}]`:'';return `  [Affinity] ${name} ${a.grade}${core}`};
   state.skills.forEach(r=>{skillLines.push(skillLine(r));if(['Item','Transformation'].includes(r.name)){const g=state.skillGrants?.[r.id]||{},budget=grantBudget(r);if(g.name||g.details||g.notes){let grant=`  [${r.name==='Item'?'Bound Item':'Transformation Form'} // ${budget} build pts] ${g.name||'Unnamed'}`;if(g.details)grant+=` - ${g.details}`;if(g.notes)grant+=` - ${g.notes}`;skillLines.push(grant)}}if(r.name.startsWith('Fighting Style'))state.techniques.filter(t=>t.styleId===r.id).forEach(t=>{skillLines.push(techLine(t));usedTech.add(t.id)});if(r.name==='Magic'&&!affinitiesPlaced){state.affinities.forEach(a=>skillLines.push(affLine(a)));affinitiesPlaced=true}});
@@ -705,7 +807,7 @@ function mergeState(o){
   const abilities=(Array.isArray(o.abilities)?o.abilities:[]).map(a=>({...a,components:Array.isArray(a.components)?a.components:[]}));
   const followers={...d.followers,...(o.followers||{}),minions:{...(o.followers?.minions||{})},companions:{...(o.followers?.companions||{})}};
   const classes=(Array.isArray(o.classes)?o.classes:[]).map(c=>({...c,overrideReason:c.overrideReason||''}));
-  return {...d,...o,schema:5,appVersion:M.version,identity,origin,stats:{...d.stats,...(o.stats||{})},skills,techniques,affinities,equipment,switchLinks:Array.isArray(o.switchLinks)?o.switchLinks:[],assets,abilities,titles:Array.isArray(o.titles)?o.titles:[],classes,customRows:Array.isArray(o.customRows)?o.customRows:[],skillGrants:(o.skillGrants&&typeof o.skillGrants==='object')?o.skillGrants:{},followers,ui:{...d.ui,...(o.ui||{}),ambient:false}};
+  return {...d,...o,schema:6,appVersion:M.version,identity,origin,stats:{...d.stats,...(o.stats||{})},skills,techniques,affinities,equipment,switchLinks:Array.isArray(o.switchLinks)?o.switchLinks:[],assets,abilities,titles:Array.isArray(o.titles)?o.titles:[],criminalTitles:Array.isArray(o.criminalTitles)?o.criminalTitles:[],classes,customRows:Array.isArray(o.customRows)?o.customRows:[],skillGrants:(o.skillGrants&&typeof o.skillGrants==='object')?o.skillGrants:{},followers,ui:{...d.ui,...(o.ui||{}),ambient:false}};
 }
 function saveLocal(show){localStorage.setItem('ih-character-builder-save',JSON.stringify(state));if(show)flashButton($('#btnSaveLocal'),'Saved')}
 function loadLocalIfPresent(promptUser){try{const raw=localStorage.getItem('ih-character-builder-save');if(raw&&(!promptUser||confirm('Load saved character?')))state=mergeState(JSON.parse(raw))}catch(_){}}

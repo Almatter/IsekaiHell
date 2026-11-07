@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/app.css?v=0.10.0">
 </head>
 <body>
   <div class="world-grid"></div>
@@ -93,6 +93,7 @@
           <label>Size<select id="sizeSelect"></select><small id="sizeNote"></small></label>
           <label>Scoop Carry-in Points<input id="scoopPoints" type="number" min="0" step="1" value="0"><small>Optional points salvaged into a replacement character. A non-7 remainder may remain unspent.</small></label>
           <label>Evolution Path<select id="evolutionPath"><option value="variant">Variant</option><option value="native">Native</option><option value="hybrid">Hybrid / Mixed Race</option></select></label>
+          <label>Recorded Evolution Tier<select id="evolutionTier"><option value="mundane">Mundane</option><option value="intermediate">Intermediate</option><option value="ascended">Ascended</option></select><small>Record an approved evolution here. This does not grant evolution perks automatically.</small></label>
           <label>World Race Template<select id="raceTemplateSelect"><option value="">Custom / write-in race</option></select><small>Selecting a known world race links its setting profile and creation requirements to the build.</small></label>
           <label>Primary Racial Tree<select id="treeSelect"></select><small id="treeWarning"></small></label>
           <label id="freeAreaKnowledgeWrap" class="hidden">Free Area Knowledge<input id="freeAreaKnowledgeDetail" autocomplete="off" placeholder="Ryke / Ryken, Republic / Nan Gau..."><small>World Natives receive Area Knowledge for free, but the area and specific locale still need to be named.</small></label>
@@ -208,6 +209,10 @@
             <h3>Acquired Titles</h3>
             <div id="titleList" class="selected-list"></div>
             <button class="ui-btn small" id="btnAddTitle">+ Custom title</button>
+            <h3>Criminal Titles</h3>
+            <p class="muted">Record titles awarded by staff: Thief, Murder, Vandal, or Abuser. Criminal titles remain equipped until cleared through the rules. Villainous requires at least one at C or higher.</p>
+            <div id="criminalTitleList" class="selected-list"></div>
+            <button class="ui-btn small" id="btnAddCriminalTitle">+ Criminal title</button>
             <div class="title-suggestions-block">
               <h3>Job Title Suggestions</h3>
               <p class="muted">Suggestions use the Job Title thresholds for clear weapon/tool skills. They are convenience prompts, not automatic approvals.</p>
@@ -275,12 +280,13 @@
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-  <script src="data/meta.js"></script>
-  <script src="data/skills.js"></script>
-  <script src="data/techniques.js"></script>
-  <script src="data/affinities.js"></script>
-  <script src="data/races.js"></script>
+  <script src="data/meta.js?v=0.10.0"></script>
+  <script src="data/skills.js?v=0.10.0"></script>
+  <script src="data/techniques.js?v=0.10.0"></script>
+  <script src="data/affinities.js?v=0.10.0"></script>
+  <script src="data/races.js?v=0.10.0"></script>
   <script src="js/music.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/builder-rules.js?v=0.10.0"></script>
+  <script src="js/app.js?v=0.10.0"></script>
 </body>
 </html>

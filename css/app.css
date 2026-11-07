@@ -346,6 +346,28 @@ dialog::backdrop { background: rgba(0,0,0,.78); backdrop-filter: blur(4px); }
 .modal-form { display: grid; gap: 12px; }
 .modal-form.two { grid-template-columns: 1fr 1fr; }
 .modal-form .wide { grid-column: 1 / -1; }
+.foundation-choices { min-width: 0; border: 1px solid var(--line, #48505a); border-radius: 8px; padding: 12px; }
+.foundation-choices legend { padding: 0 6px; font-weight: 700; }
+.foundation-choices .checkbox-row { display: grid; gap: 8px; margin-top: 10px; }
+.foundation-choices .checkbox-row label { overflow-wrap: anywhere; }
+.modal-form, .modal-form label, .modal-form > div { min-width: 0; }
+.modal-form select { max-width: 100%; }
+@media (max-width: 780px) {
+  dialog { max-height: calc(100dvh - 24px); }
+  .modal-card { display: flex; flex-direction: column; max-height: calc(100dvh - 24px); }
+  .modal-card #modalBody { min-height: 0; max-height: min(70vh, calc(100dvh - 160px)); overflow-wrap: anywhere; }
+  .modal-head, .modal-actions { flex-shrink: 0; }
+  .modal-form input:not([type="checkbox"]), .modal-form select, .modal-form textarea { font-size: 16px; }
+  .modal-form input:not([type="checkbox"]), .modal-form select:not([multiple]), .modal-actions .ui-btn { min-height: 44px; }
+  .modal-form select[multiple] { min-height: 160px; }
+  .foundation-choices .checkbox-row label { min-height: 44px; padding: 6px 0; }
+  .modal-form label.checkbox-row { min-height: 44px; }
+  .modal-form input[type="checkbox"] { min-width: 22px; min-height: 22px; flex-shrink: 0; }
+  .selected-row .row-title, .selected-row .row-meta { overflow-wrap: anywhere; }
+  .selected-row .row-actions .ui-btn { min-height: 44px; min-width: 44px; }
+  #criminalTitleList .selected-row { grid-template-columns: minmax(0, 1fr); }
+  #criminalTitleList .row-actions { flex-wrap: wrap; justify-content: flex-end; }
+}
 .icon-btn { border: 0; background: none; font-size: 26px; color: var(--muted); }
 .equipment-type-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; border:1px solid #453731; padding:10px; background:#090808; }
 .equipment-type-grid label { flex-direction:row; align-items:center; text-transform:none; font-size:12px; }

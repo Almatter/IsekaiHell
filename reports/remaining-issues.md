@@ -1,52 +1,64 @@
-# IH builder — remaining issues after prerequisite corrections
+# IH builder — remaining issues after v0.11.0
 
-Updated 2026-11-07. Numbers below are stable references for the next round of corrections. The original audit is historical; this list reflects the changes in v0.10.0.
+Updated 2026-11-07. This is a fresh, continuously numbered list organized by the three requested categories. The previous list's **#14 (Educated)** is completed; numbers below replace the previous numbering.
 
-Implemented in this round: fixed C Standing for Always Outnumbered/Villainous; structured graded criminal titles and Villainous eligibility; independent Polymorph prerequisites; required Fighting Style weapon choices and category/stat/equipment checks; five-entry, style-bound Ethos/Mastery foundations; School/Domain affinity/augmenter foundations and dependency grades; Profession/Maker/Refiner stats; Tamer/facility dependencies; Capacity/Chameleon/Scrying checks; affinity prerequisites; additional required details; Resistance/movement prices; Incurable/Indirect; one specialized style and no Generalist; F-only non-upgrading cores. Saves use schema 6 and preserve existing data, but older affected entries need explicit selections before they validate.
+## Completed in this round
 
-The rules permit other Fighting Styles alongside a single specialized style. They do not state that specialization bans other styles. Criminal title names in the rules are **Thief, Murder, Vandal, Abuser**.
+- Educated grants three distinct non-Artisan Secondary choices, a background title, free linked grades, paid independent upgrades, class credit and ability/export entries. Normal child prerequisites apply. Ordinary racial requirements exclude the grants; a race template explicitly specifying Educated (such as Half-Elf) may use them. Earlier individual upgrade spending is retained when Educated later advances.
+- Earned Points is editable and includes Scoop carry-in. Both count toward Standing and the spendable budget. Starting points remain 105 plus stat-reduction bonuses; automatic size bonuses are included in earned points. Older Scoop saves migrate once without changing the total budget.
+- Positive earned points unlock A-grade stats. S remains a separate tribulation feature; no S cost or approval was invented.
+- Profession's canonical identifier is kept separate from the user's title/specialization. Literal special characters and legacy named Profession imports are handled safely and regression tested.
+- Anchor is now a Tier 1 class with its stated stats, skills, same-style technique choices, equipment and Cleave description. Per the user's clarification, it requires two listed techniques from the same Fighting Style.
+- All 202 assigned race images exist, decode locally and loaded from public Pages URLs. Diwose, Zentail and Zentox have no assigned artwork; three generated approval drafts are kept outside the website.
 
-## Remaining corrections and feature work
+## Broken or wrong behavior
 
-1. **Racial discount eligibility and stale discounts.** Restrict Born For This/These to actual racial requirement purchases, include eligible techniques/affinities/equipment, allocate by parent tree, and disable retained discounts when the perk changes.
-2. **Mixed Race purchase synchronization.** Reconcile the automatic hybrid charge with separately purchased Mixed Race features and the tree titles/access they grant.
-3. **Free origin/Chosen Path skill integration.** Include virtual free skills in ability components, prerequisite lookups and Power Grade; give parameterized free skills the same structured subject/subtype controls as purchased ones.
-4. **Deplete cooldowns.** Apply its +2/+4/+6 posts to calculated abilities.
-5. **Other limiter restrictions.** Enforce single-rank limits, Charges/Lucky incompatibility, required assistants/equipment, static versus summoned eligibility, and other limiter-specific conditions.
-6. **Ability action arithmetic.** Add independent intents/effects correctly and apply any agreed free-effect rule only in the appropriate context.
-7. **Ability composition.** Enforce required Fighting Style/Magic/School/Domain components, same-style techniques, incompatible cores, relative component grades and missing references.
-8. **Ability Flux and grade overrides.** Implement individual usage grades, grade transfers and augmenter caps; require a reason or a valid transformation when overriding the formula’s grade.
-9. **Other core-specific restrictions.** Check higher-grade Blind Ranged Fighting/Quake/Range conditions and relevant range/combination rules. Non-upgrading cores and Indirect’s same-style Range dependency are fixed.
-10. **Exact weapon-to-equipment matching.** Styles now require valid weapon selections, governing stats and matching equipment categories/grades. Equipment still lacks a structured sword-versus-axe/etc. subtype, so exact weapon matching needs a corresponding equipment field.
-11. **Existing class checker errors.** Add Pathforger’s missing Vitality E or Speed E; prevent duplicate rows satisfying distinct choices; revalidate manually acquired/equipped classes when their requirements change.
-12. **Missing class catalog.** Add Anchor and the document’s Tier 2/3 classes with predecessor requirements and per-tier equipment rules.
-13. **Class grants and effects.** Instantiate grants such as Nomad’s Talented Friends and model Magic Circle, Agile and Pathforged conditions/effects.
-14. **Educated bundle.** Select and grant three linked non-Artisan secondaries, handle upgrades, background title and class/racial eligibility correctly.
-15. **Magic School/Domain granted benefits.** Foundations are enforced; Metamagic allocation, Domain’s 49-point skill pool, free affinity/augmenter options and student/graduate titles/assets remain.
-16. **Ethos/Mastery granted benefits.** Foundations are enforced; Initiative, student/master titles/assets, free Mastery techniques, Weapon Excellence/Precision and specialization’s exclusion from free Mastery benefits remain.
-17. **Item internal builder.** Replace the text-only build with actual internal purchases, spending, item stats and dependency/wielder checks.
-18. **Transformation internal builder.** Model inherited/unusable features, refunds, form purchases, Size Change, nested-form restrictions and equipment melding.
-19. **Companion internal builder.** Calculate shared-pool spending, minimum development, prohibited skills, race/class eligibility and equipment.
-20. **Minion internal builder.** Calculate the 56-point template and B caps, spell/static mode, forbidden skills and grade-based counts.
-21. **Tamer development.** Prerequisites/facilities are enforced; structured buddy rosters, size/stats/skills/elements, farm capacity, breeding/merging/training/awakening and downtime remain.
-22. **Enchanting.** Implement Mythril eligibility, cores/shards, capacity, skills, costs/discounts, independent item abilities/cooldowns and damage-related effects.
-23. **Consumables.** Implement recipes, prerequisite skills, costs, Artisan reductions, held/refunded points and usage requirements.
-24. **Magic-item inventory limits.** Track enchanted items/consumables against Standing and Focus allowances, excluding Item-skill objects as the rules specify.
-25. **Masterwork crafting workflow.** Stat/specialty checks are implemented; harvesting, refining, facilities, Maker augments/setbacks, infusion and Self Made behavior remain.
-26. **Fullers.** Add chassis, cores, equipment, systems, hardpoints, prices, piloting, independent cooldowns and redlining.
-27. **Augments.** Add the catalog, prices, body/slot restrictions, installation requirements, Sentience loss and granted functionality.
-28. **Character-sheet fields and ordinary inventory.** Add Theme, Post Frequency, Discord Name, Current RP, Goals, Downtime, Narrator Grade, required weak point/core and ordinary Items.
-29. **Size output and modifiers.** Export equipped size titles and complete lift/carry/throw/movement/Accurate benefits; check height/weight consistency.
-30. **Criminal-title advancement and buyoff ledger.** The four graded mandatory titles and Villainous checks work. Repeat-offense grade calculation, paid buyoff, perk-specific costs and persistent staff-clearance history remain. Current clear/correction controls are manual records, not automated buyoff.
-31. **Other Asset rules.** Tamer facilities have structured types. General asset subtype pricing, locations, property/connection/pet definitions and synchronization with Asset-skill purchases remain.
-32. **Earned points, change logs and Scoops.** Add awards/provenance, advancement spending, unspent points, dated history, validated half-earned Scoop calculations and exclusions. C Standing skills remain unavailable to an ordinary F Standing creation build.
-33. **Higher progression and evolution.** Recorded evolution tier supports Chameleon checking, but does not grant or validate the entire evolution process. Add advanced racial perks, A/S stat unlocks, tribulations and the separate Skill Mastery route.
-34. **Campaign assets and optional combat.** Add Complex Assets, shared ownership, marketplace transfers, Boons/contracts and optional combat HP/durability/effectiveness/condition tracking as desired.
-35. **Resolve remaining rule-policy conflicts.** Starting Asset cap F versus B; natural-equipment stat progression; Versatile replacing versus supplementing the governing stat; and the exact damaging-ability action exemption. Current policies were preserved in this round.
+1. **Stale racial discounts.** Born For This/These discounts can continue after their perk is changed.
+2. **Mixed Race duplicate charges.** Automatic hybrid costs and separately purchased Mixed Race features are not reconciled.
+3. **Deplete cooldowns.** The limiter's additional cooldown is not included in ability calculations.
+4. **Ability action arithmetic.** Independent effects/intents are undercounted; the free-effect exception is applied without checking the intended context.
+5. **Free origin/Chosen Path skills.** Their virtual entries remain absent from ordinary ability components, prerequisite lookup and Power Grade. Educated grants now have these integrations, but the separate origin grant system still needs them.
+6. **Masterwork job-title suggestions.** Configured prefixes contain a `#` absent from actual skill names.
+7. **Ability grade overrides.** An override can contradict the listed components without a valid lowered-grade/Flux formula or explanation.
+8. **Conflicting rule policies needing a ruling.** Starting Asset cap F versus B, natural-equipment stat progression, Versatile replacing versus supplementing a stat, and the precise damaging-ability action exemption differ between the document and explicit builder policies. These are identified conflicts, not all proven accidental coding errors.
+
+## Validations and rule enforcement
+
+9. **Racial discount eligibility.** Restrict targets to actual racial requirement purchases, include eligible techniques/affinities/equipment, and allocate Hybrid discounts by parent tree.
+10. **Exact weapon-to-equipment matching.** Styles check category, grade and governing stat; equipment still needs a structured sword/axe/etc. subtype for exact matching.
+11. **Remaining core restrictions.** Check higher-grade Blind Ranged Fighting/Quake/Range requirements, relative grades, and other core-specific restrictions. Non-upgrading cores and Indirect's same-style Range dependency are already fixed.
+12. **Ability composition.** Require the relevant Fighting Style/Magic/School/Domain components, keep techniques within one style, reject incompatible combinations and detect missing references.
+13. **Limiter-specific restrictions.** Single-rank limits, Charges/Lucky, assistant/equipment details, static versus summoned eligibility, and other contextual restrictions still need checks.
+14. **Existing class checks.** Pathforger still lacks Vitality E or Speed E; handedness and exact equipment associations need validation; manually acquired classes need revalidation after changes. Educated class credit and some duplicate-row handling are now implemented, but choice identity and grade requirements need a broader audit.
+15. **Criminal title advancement and buyoff.** Calculate repeat-offense grades, buyoff costs and perk modifiers, and record staff clearance. Current title entry/removal is a manual record.
+16. **Asset conditions and prices.** Enforce subtype prices, fixed locations, property/connection/pet definitions and valid use of training facilities. Facility-type linkage is implemented, but not every price/location rule.
+17. **Scoop provenance and calculation.** Earned-point accounting is fixed. Still needed: source character, half-earned/round-down calculation, nontransferable bonus exclusions and prevention of pooled Scoops.
+
+## Missing features
+
+18. **Magic School/Domain benefits.** Metamagic allocation, Domain's 49-point pool, free affinity/augmenter options and automatic student/graduate titles/assets. Foundations are implemented.
+19. **Martial Ethos/Mastery benefits.** Initiative, student/master titles/assets, free Mastery techniques, Weapon Excellence/Precision and specialization's exclusion from free Mastery benefits. Foundations are implemented.
+20. **Advanced classes and class grants.** Add the Tier 2/3 catalog and predecessor requirements; instantiate grants such as Nomad's Talented Friends and class perk effects. All five starter classes, including Anchor, are now listed.
+21. **Item internal builder.** Actual purchases, internal spending, item stats and prerequisite/wielder checks.
+22. **Transformation internal builder.** Inherited/unusable features, refunds, form purchases, Size Change, nested-form restrictions and equipment melding.
+23. **Companion internal builder.** Shared expenditure, minimum development, forbidden skills, race/class eligibility and equipment.
+24. **Minion internal builder.** Calculated 56-point templates, B caps, spell/static mode, forbidden skills and grade-based numbers.
+25. **Tamer development.** Structured buddy rosters, size/stats/skills/elements, farm capacity, training, breeding, merging, awakening and downtime.
+26. **Enchanting.** Cores/shards, capacity, skills, costs/discounts, separate item abilities/cooldowns and damage effects.
+27. **Consumables.** Recipes, costs, prerequisite inclusion, Artisan reductions, held/refunded points and usage checks.
+28. **Magic-item limits.** Standing/Focus allowances and correct classification of enchanted items, consumables and Item-skill objects.
+29. **Masterwork crafting workflow.** Harvesting, refining, facilities, Maker augments/setbacks, infusion and Self Made. Specialty/stat checks are implemented.
+30. **Fullers.** Chassis, cores, weapons/systems, hardpoints, prices, piloting, independent cooldowns and redlining.
+31. **Augments.** Catalog, costs, slots, installation requirements, Sentience loss and granted functionality.
+32. **Character-sheet fields and ordinary Items.** Theme, Post Frequency, Discord Name, Current RP, Goals, Downtime, Narrator Grade, required weak point/core and everyday inventory.
+33. **Size output and modifiers.** Equipped size titles, complete lift/carry/throw/movement/Accurate effects and height/weight consistency.
+34. **Persistent awards and expenditure history.** Dated moderator links, purchases, trades, title changes and refund approvals. The editable earned total and Educated upgrade charges are not a complete historical ledger.
+35. **Advanced progression.** Full evolution prerequisites/perks, S-stat tribulations, S costs/unlocks and the separate Skill Mastery route. Recorded evolution tier and the A-stat unlock are already present.
+36. **Campaign assets and optional combat.** Complex Assets, shared ownership, marketplace workflows, Boons/contracts, HP, equipment durability, effectiveness, conditions and live cooldown tracking.
+37. **Approved race art installation.** Diwose, Zentail and Zentox drafts await approval before being added to the catalog. No assigned image URL was broken in the current audit; see race-image-audit.md.
 
 ## Verification
 
-- `node --test tests/builder-rules.test.cjs`: regression tests cover valid and invalid prerequisite chains, collections, subtype prices, non-upgrading cores and save compatibility.
-- Browser checks: criminal title creation; weapon-type selection and valid Fighting Style; five-technique Ethos creation; five-affinity School creation and reopening; readable foundation export; deleting a foundation invalidates the School; Resistance pricing options and typed facility controls.
-- Mobile checks at 320×568 and 390×844: completed the five-affinity School workflow, checked dialog/page overflow and visible Save controls, verified 44 px foundation/title action targets and 16 px mobile input text. No physical iOS/Android hardware was used.
-- Existing saved builds are not silently assigned invented weapons, parent skills, foundations, stat choices or facilities. Edit affected entries to complete those choices.
+31 automated regression tests pass. Browser checks cover Educated selection/upgrades/export, safe Profession names, earned totals/Standing, and phone-width forms. Image verification covered all 110 races and 202 assigned public images. Draft artwork is not referenced by the site.
+
+A final additional browser file-import check could not execute because automatic approval review reached its usage limit. Local migration and upgrade-accounting regression tests passed.

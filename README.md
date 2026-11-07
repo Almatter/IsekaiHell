@@ -1,6 +1,15 @@
-# Isekai Hell Site v0.10.0
+# Isekai Hell Site v0.11.0
 
 Open `index.html` after extracting the full archive. The site is static and can be hosted from any ordinary web server.
+
+## v0.11.0 Educated and advancement
+
+- Educated now grants three linked Secondary skills, optional paid individual upgrades, a background title, class credit and readable sheet entries.
+- Earned points include Scoop carry-in and determine Standing. Legacy saves migrate Scoop points without duplicating their budget.
+- Positive earned points unlock A stats; S still requires a separate tribulation workflow.
+- Added Anchor starter-class checks and hardened Profession naming/imports.
+- Audited every assigned race image. See `reports/race-image-audit.md`; approval drafts have not been installed.
+- Updated `reports/remaining-issues.md` distinguishes broken behavior, rule enforcement and missing features.
 
 ## v0.10.0 character builder corrections
 

@@ -783,3 +783,6 @@ select option:hover { background: #4f1720; color: #fff5e7; }
   .construction-grid,#craftingInventory { grid-template-columns:1fr; }
   .build-footer { margin:4px 9px 72px; padding:10px 4px; font-size:9px; }
 }
+
+.educated-choice { display: grid; gap: 12px; }
+.educated-grant { margin-left: 12px; border-left-color: var(--teal); }

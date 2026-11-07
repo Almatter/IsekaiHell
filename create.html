@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=0.10.0">
+  <link rel="stylesheet" href="css/app.css?v=0.11.0-r4">
 </head>
 <body>
   <div class="world-grid"></div>
@@ -91,7 +91,7 @@
         <hr class="divider">
         <div class="form-grid two">
           <label>Size<select id="sizeSelect"></select><small id="sizeNote"></small></label>
-          <label>Scoop Carry-in Points<input id="scoopPoints" type="number" min="0" step="1" value="0"><small>Optional points salvaged into a replacement character. A non-7 remainder may remain unspent.</small></label>
+          <label>Earned Points (including Scoop carry-in)<input id="earnedPoints" type="number" min="0" step="1" value="0"><small>Enter all earned points, including points brought in from a scooped character. These count toward Standing and the spendable budget; do not also add them to starting points. Size bonuses are added automatically.</small></label>
           <label>Evolution Path<select id="evolutionPath"><option value="variant">Variant</option><option value="native">Native</option><option value="hybrid">Hybrid / Mixed Race</option></select></label>
           <label>Recorded Evolution Tier<select id="evolutionTier"><option value="mundane">Mundane</option><option value="intermediate">Intermediate</option><option value="ascended">Ascended</option></select><small>Record an approved evolution here. This does not grant evolution perks automatically.</small></label>
           <label>World Race Template<select id="raceTemplateSelect"><option value="">Custom / write-in race</option></select><small>Selecting a known world race links its setting profile and creation requirements to the build.</small></label>
@@ -119,7 +119,7 @@
       <section class="panel step-panel" data-panel="stats">
         <div class="panel-head"><div><div class="eyebrow">03 // Stats</div><h2>Build the foundation</h2></div><div class="head-stat"><span>Character Grade</span><strong id="characterGradeTop">F</strong></div></div>
         <div id="statsGrid" class="stats-grid"></div>
-        <div class="rule-callout">All normal starting stats begin at F. Creation normally caps stats at B. Reducing a stat to G or H grants points, but those gains offset stat investment when calculating Character Grade.</div>
+        <div class="rule-callout">All normal starting stats begin at F. With zero earned points, stats are capped at B. Any earned points (including Scoop carry-in) unlock A-grade stats; S still requires a separate tribulation. Reducing a stat to G or H grants points, but those gains offset stat investment when calculating Character Grade.</div>
       </section>
 
       <section class="panel step-panel" data-panel="skills">
@@ -280,13 +280,13 @@
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-  <script src="data/meta.js?v=0.10.0"></script>
-  <script src="data/skills.js?v=0.10.0"></script>
-  <script src="data/techniques.js?v=0.10.0"></script>
-  <script src="data/affinities.js?v=0.10.0"></script>
-  <script src="data/races.js?v=0.10.0"></script>
+  <script src="data/meta.js?v=0.11.0-r4"></script>
+  <script src="data/skills.js?v=0.11.0-r4"></script>
+  <script src="data/techniques.js?v=0.11.0-r4"></script>
+  <script src="data/affinities.js?v=0.11.0-r4"></script>
+  <script src="data/races.js?v=0.11.0-r4"></script>
   <script src="js/music.js"></script>
-  <script src="js/builder-rules.js?v=0.10.0"></script>
-  <script src="js/app.js?v=0.10.0"></script>
+  <script src="js/builder-rules.js?v=0.11.0-r4"></script>
+  <script src="js/app.js?v=0.11.0-r4"></script>
 </body>
 </html>

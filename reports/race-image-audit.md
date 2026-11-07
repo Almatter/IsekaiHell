@@ -16,3 +16,7 @@ Approval drafts were generated with the built-in image-generation tool, based on
 - Zentox: C:/Users/novam/.codex/visualizations/2026/11/07/01a1b6fc-4467-7380-9934-e253b3291f6f/race-art-proposals/zentox.png
 
 Review the anatomy, eyes, adult appearance, and species interpretation before approval. In particular, the Diwose draft depicts a shared body with adjacent fused heads; this interpretation should be confirmed by the setting author.
+
+## Artwork standard
+
+All new or replacement race images must show male and female adult examples together, with a simple textureless background (or transparency). Existing assigned artwork has not been regenerated. The three missing-race drafts are being revised to this standard and remain pending approval.

@@ -1,10 +1,10 @@
-# IH builder — remaining issues after v0.11.0
+# IH builder — remaining issues after v0.11.1
 
 Updated 2026-11-07. This is a fresh, continuously numbered list organized by the three requested categories. The previous list's **#14 (Educated)** is completed; numbers below replace the previous numbering.
 
 ## Completed in this round
 
-- Educated grants three distinct non-Artisan Secondary choices, a background title, free linked grades, paid independent upgrades, class credit and ability/export entries. Normal child prerequisites apply. Ordinary racial requirements exclude the grants; a race template explicitly specifying Educated (such as Half-Elf) may use them. Earlier individual upgrade spending is retained when Educated later advances.
+- Educated grants three distinct non-Artisan Secondary choices, a background title, free linked grades, paid independent upgrades, class credit and ability/export entries. Individual child prerequisites are waived; Educated’s own Character prerequisite and required choice details still apply. Ordinary racial requirements exclude the grants; a race template explicitly specifying Educated (such as Half-Elf) may use them. Earlier individual upgrade spending is retained when Educated later advances.
 - Earned Points is editable and includes Scoop carry-in. Both count toward Standing and the spendable budget. Starting points remain 105 plus stat-reduction bonuses; automatic size bonuses are included in earned points. Older Scoop saves migrate once without changing the total budget.
 - Positive earned points unlock A-grade stats. S remains a separate tribulation feature; no S cost or approval was invented.
 - Profession's canonical identifier is kept separate from the user's title/specialization. Literal special characters and legacy named Profession imports are handled safely and regression tested.

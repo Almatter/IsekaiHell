@@ -7,7 +7,7 @@ const root=path.resolve(__dirname,'..');
 function fixture(){
   const $=()=>({text(){return this},html(){return ''}}),ctx={window:{},jQuery:$,console};vm.createContext(ctx);
   for(const file of ['data/meta.js','data/skills.js','data/techniques.js','data/affinities.js','data/races.js','js/builder-rules.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx,{filename:file});
-  const source=fs.readFileSync(path.join(root,'js/app.js'),'utf8').replace('$(init);','window.testApi={defaultState,setState:s=>state=s,validateSkill,ruleContext,validation,skillCost,techniqueCost,techniqueGrade,affinityCost,mergeState,generateSheet,skillRuleSummary};');
+  const source=fs.readFileSync(path.join(root,'js/app.js'),'utf8').replace('$(init);','window.testApi={defaultState,setState:s=>state=s,validateSkill,ruleContext,validation,skillCost,techniqueCost,techniqueGrade,affinityCost,mergeState,generateSheet,skillRuleSummary,finalizeEducatedChoices,componentPool,acquiredSkills,pointsEarned,pointsAtStart,availablePoints,standingGrade,statGradeOptions,classStatus,racialValidation,raceRequirementChecks,skillDisplayName,automaticTitles,totalSpent};');
   vm.runInContext(source,ctx,{filename:'app.js'});
   const a=ctx.window.testApi,s=a.defaultState(),rules=ctx.window.IH_RULES;
   Object.keys(s.stats).forEach(k=>s.stats[k]='B');s.identity.name='Test';s.origin.evolutionPath='native';s.origin.perk='Born For This';a.setState(s);
@@ -127,9 +127,69 @@ test('Incurable and Indirect are cataloged as martial cores without absorbing ad
 });
 test('required subjects and imported legacy data get validation rather than invented foundations',()=>{
   const f=fixture();for(const name of ['Feature [Feature Name]','Special Movement [movement type]','Profession [Name of profession]','Resistance [Element]','Language','Gear'])assert.equal(f.a.validateSkill(f.skill(name,'F',{detail:''})).ok,false,name);
-  const imported=f.a.mergeState({schema:5,skills:[{id:'old',name:'Fighting Style [Style Name]',grade:'F',detail:'Sword'}]});assert.equal(imported.schema,6);assert.equal(imported.criminalTitles.length,0);f.a.setState(imported);assert.match(f.a.validateSkill(imported.skills[0]).message,/weapon type/);
+  const imported=f.a.mergeState({schema:5,skills:[{id:'old',name:'Fighting Style [Style Name]',grade:'F',detail:'Sword'}]});assert.equal(imported.schema,7);assert.equal(imported.criminalTitles.length,0);f.a.setState(imported);assert.match(f.a.validateSkill(imported.skills[0]).message,/weapon type/);
 });
 test('JSON roundtrip preserves dependencies, criminal grades, facility types and chosen stats',()=>{
   const f=schoolFixture();f.s.criminalTitles=[{id:'c',name:'Thief',grade:'C',notes:'Staff award'}];f.s.assets=[{id:'a',name:'Pen',grade:'F',assetKind:'Breeding Pen'}];const copy=f.a.mergeState(JSON.parse(JSON.stringify(f.s)));
   assert.equal(copy.skills.find(s=>s.id===f.school.id).foundationRefs.join(','),f.school.foundationRefs.join(','));assert.equal(copy.criminalTitles[0].grade,'C');assert.equal(copy.assets[0].assetKind,'Breeding Pen');
+});
+function educated(f,extra={}){return f.skill('Educated','F',{educatedBackground:'Academy Graduate',educatedChoices:[{name:'Arcana',detail:'',upgradeGrade:'F'},{name:'History',detail:'',upgradeGrade:'F'},{name:'Profession [Name of profession]',detail:'Archive cataloguer',governingStat:'Intelligence',upgradeGrade:'F'}],...extra})}
+test('Educated grants exactly three non-Artisan Secondary skills and may only be taken once',()=>{
+  const f=fixture(),e=educated(f);assert.equal(f.a.validateSkill(e).ok,true);assert.equal(f.a.acquiredSkills().length,4);
+  e.educatedChoices.pop();assert.match(f.a.validateSkill(e).message,/exactly three/);e.educatedChoices.push({name:'Artisan [type]',detail:'Metal'});assert.match(f.a.validateSkill(e).message,/excluding Artisan/);
+  e.educatedChoices[2]={name:'Arcana',detail:''};assert.match(f.a.validateSkill(e).message,/distinct/);e.educatedChoices[2]={name:'Magic'};assert.match(f.a.validateSkill(e).message,/only Secondary/);
+  e.educatedChoices[2]={name:'Academia'};educated(f);assert.match(f.a.validateSkill(e).message,/only be taken once/);
+});
+test('Educated upgrades preserve previously paid independent purchases without automatic refunds',()=>{
+  const f=fixture(),e=educated(f);e.educatedChoices[0].upgradeGrade='D';f.a.finalizeEducatedChoices(e);let grants=f.rules.educatedGrants(f.s);
+  assert.equal(grants[0].grade,'D');assert.equal(f.a.skillCost(grants[0]),14);assert.equal(f.a.skillCost(grants[1]),0);assert.equal(f.a.skillCost(e),7);
+  let old=JSON.parse(JSON.stringify(e));e.grade='E';f.a.finalizeEducatedChoices(e,old);grants=f.rules.educatedGrants(f.s);assert.equal(grants[0].grade,'D');assert.equal(f.a.skillCost(grants[0]),14);assert.equal(grants[1].grade,'E');
+  old=JSON.parse(JSON.stringify(e));e.grade='C';f.a.finalizeEducatedChoices(e,old);assert.equal(f.rules.educatedGrants(f.s)[0].grade,'C');assert.equal(f.a.skillCost(f.rules.educatedGrants(f.s)[0]),14);
+  old=JSON.parse(JSON.stringify(e));e.educatedChoices[0].upgradeGrade='B';f.a.finalizeEducatedChoices(e,old);assert.equal(f.a.skillCost(f.rules.educatedGrants(f.s)[0]),21);
+  f.s.skills=[];assert.equal(f.rules.educatedGrants(f.s).length,0);
+});
+test('Educated requires a background, child details and normal child stat prerequisites',()=>{
+  const f=fixture(),e=educated(f);e.educatedBackground='';assert.match(f.a.validateSkill(e).message,/background title/);e.educatedBackground='Scholar';e.educatedChoices[2].detail='';assert.match(f.a.validateSkill(e).message,/subject/);
+  e.educatedChoices[2].detail='Archivist';f.s.stats.Intelligence='F';assert.match(f.a.validateSkill(e).message,/Intelligence E/);
+});
+test('Educated grants count for classes and ability components, but not ordinary racial requirements',()=>{
+  const f=fixture(),e=educated(f);e.educatedChoices[2]={name:'Academia'};
+  assert.equal(f.a.classStatus('caster').req.find(r=>r.msg.includes('3 Intelligence')).pass,true);
+  assert.equal(f.a.racialValidation().items.find(r=>r.msg.includes('Secondary')).pass,false);
+  assert.equal(f.a.raceRequirementChecks({tree:'Prime',stage:'Mundane',requirements:['2 secondary skills']}).checks.find(r=>r.msg.includes('Secondary')).pass,false);
+  assert.equal(f.a.raceRequirementChecks({tree:'Prime',stage:'Mundane',requirements:['Educated F','2 secondary skills']}).checks.find(r=>r.msg.includes('Secondary')).pass,true);
+  assert.ok(f.a.componentPool().some(c=>c.id.startsWith('skill:educated:')));
+  assert.ok(f.a.automaticTitles().some(t=>t.name==='Academy Graduate'));
+});
+test('earned points and legacy Scoops enter Standing and budget exactly once',()=>{
+  const f=fixture();f.s.earnedPoints=100;assert.equal(f.a.pointsAtStart(),105);assert.equal(f.a.pointsEarned(),100);assert.equal(f.a.availablePoints(),205);assert.equal(f.a.standingGrade(),'E');
+  const migrated=f.a.mergeState({schema:6,origin:{scoopPoints:150}});f.a.setState(migrated);assert.equal(f.a.availablePoints(),255);assert.equal(f.a.pointsAtStart(),105);assert.equal(f.a.pointsEarned(),150);assert.equal(migrated.origin.scoopPoints,0);
+  const again=f.a.mergeState(JSON.parse(JSON.stringify(migrated)));f.a.setState(again);assert.equal(f.a.availablePoints(),255);assert.equal(f.a.pointsEarned(),150);
+  again.origin.size='small';assert.equal(f.a.pointsEarned(),157);
+});
+test('positive earned points unlock A stats without inventing S tribulation permission',()=>{
+  const f=fixture();assert.doesNotMatch(f.a.statGradeOptions('B'),/>A</);f.s.earnedPoints=1;assert.match(f.a.statGradeOptions('A'),/>A</);assert.doesNotMatch(f.a.statGradeOptions('A'),/>S</);
+  f.s.stats.Strength='A';assert.equal(f.a.validation().errors.some(e=>e.includes('Strength exceeds')),false);f.s.earnedPoints=0;assert.equal(f.a.validation().errors.some(e=>e.includes('Strength exceeds')),true);
+});
+test('Profession display and imports keep user naming separate from the canonical rules identifier',()=>{
+  const f=fixture();for(const detail of ['Potato farmer','Master [A]','Smith "&" <script>','Cost $& $$ $1']){
+    const p=f.skill('Profession [Name of profession]','F',{detail,governingStat:'Intelligence'});assert.equal(f.a.skillDisplayName(p),`Profession [${detail}]`);assert.equal(f.a.validateSkill(p).ok,true);assert.doesNotThrow(()=>f.a.classStatus('nomad'));
+  }
+  const imported=f.a.mergeState({skills:[{id:'old',name:'Profession [Archive keeper]',grade:'F',governingStat:'Intelligence'}]});assert.equal(imported.skills[0].name,'Profession [Name of profession]');assert.equal(imported.skills[0].detail,'Archive keeper');
+});
+test('Anchor appears among Tier 1 classes and checks its literal stats, skills and equipment',()=>{
+  const f=fixture();assert.ok(f.ctx.window.IH_META.classRules.some(c=>c.id==='anchor'&&c.tier===1));const style=f.style('E');f.tech(style,'Area');f.tech(style,'Contact');
+  f.skill('Energized');f.skill('Superstrength');f.skill('Duration Reduction');f.skill('Athletics');educated(f);f.s.equipment.push({id:'heavy',types:['heavy'],grade:'F'});
+  assert.equal(f.a.classStatus('anchor').ok,true);assert.equal(f.a.classStatus('anchor').manual,false);
+  f.s.stats.Strength='E';assert.equal(f.a.classStatus('anchor').req.find(r=>r.msg==='Strength D').pass,false);f.s.stats.Strength='B';
+  f.s.equipment=f.s.equipment.filter(e=>e.id!=='heavy');assert.equal(f.a.classStatus('anchor').req.find(r=>r.msg==='Heavy Armor F').pass,false);
+});
+test('invalid Educated parents cannot provide class credit, and selected-stat professions count correctly',()=>{
+  const f=fixture(),e=educated(f);assert.equal(f.a.classStatus('caster').req.find(r=>r.msg.includes('3 Intelligence')).pass,true);
+  e.educatedBackground='';assert.equal(f.a.classStatus('caster').req.find(r=>r.msg.includes('3 Intelligence')).pass,false);
+});
+test('Anchor requires two distinct listed techniques in a single style',()=>{
+  const f=fixture(),first=f.style('E'),second=f.style('E');f.tech(first,'Area');f.tech(second,'Contact');
+  const check=()=>f.a.classStatus('anchor').req.find(r=>r.msg.includes('listed techniques')).pass;
+  assert.equal(check(),false);f.tech(first,'Area');assert.equal(check(),false);f.tech(first,'Flexible');assert.equal(check(),false);f.tech(first,'Contact');assert.equal(check(),true);
 });

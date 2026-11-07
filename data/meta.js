@@ -1,5 +1,5 @@
 window.IH_META = {
-  version: "0.10.0",
+  version: "0.11.0",
   rulesSnapshot: "2026-11-07 (partial audit corrections)",
   grades: ["H","G","F","E","D","C","B","A","S"],
   skillGrades: ["F","E","D","C","B","A"],
@@ -44,6 +44,16 @@ window.IH_META = {
     {id:"natural-heavy",name:"Natural Heavy Armor",stat:"Vitality",natural:true}
   ],
   classRules: [
+    {
+      id:"anchor",name:"Anchor",tier:1,
+      summary:"Heavy melee combatant using a Fighting Style, strength training and heavy armor.",
+      requirements:["Strength D","Vitality E","Character Grade E","Melee Fighting Style E","2 listed techniques from that same style","Energized F","Superstrength F","Duration Reduction F or Resistance F","Athletics F","2 additional Secondary skills","Melee Weapon E","Heavy Armor F"],
+      techniqueCores:["Area","Contact","Deflect","Drain","Enervation","Incapacitating","Knockback","Penetrating","Quake","Reflect"],
+      techniqueCount:2,
+      perk:"Cleave",
+      perkDescription:"While wielding a melee weapon with both hands, melee attacks can hit all creatures and objects within weapon reach without an ability.",
+      autoCheck:"anchor"
+    },
     {
       id:"caster",name:"Caster",tier:1,
       summary:"Magic specialist using a catalyst and several basic spell augmenters.",

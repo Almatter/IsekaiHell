@@ -18,6 +18,13 @@ const facilities={'Tamer Breeding':'Breeding Pen','Tamer Buddy Awakening':'Awake
 const crimes={Thief:'Taking possessions from a creature that is neither a criminal nor a monster.',Murder:'Killing a person who is neither a monster nor a criminal.',Vandal:'Intentionally damaging a non-monster/non-criminal owner’s property without permission.',Abuser:'Willfully harming a non-criminal/non-monster person without consent.'};
 function suiteKind(r){if(r.name.startsWith('Martial Ethos'))return 'ethos';if(r.name.startsWith('Martial Mastery'))return 'mastery';if(r.name.startsWith('Magic School'))return 'school';if(r.name.startsWith('Magic Domain'))return 'domain';return ''}
 function isStyle(r){return r?.name?.startsWith('Fighting Style')}
+function educatedGrants(state){
+  return state.skills.filter(s=>s.name==='Educated').flatMap(parent=>(Array.isArray(parent.educatedChoices)?parent.educatedChoices:[]).map((choice,i)=>({
+    ...choice,id:`educated:${parent.id}:${i}`,name:String(choice.name||''),detail:String(choice.detail||''),
+    grade:grades[Math.max(index(parent.grade),index(choice.upgradeGrade||'F'))]||'F',
+    grantedByEducated:parent.id,grantBaseGrade:parent.grade,grantExtraPoints:choice.extraPointsPaid,limiters:[],notes:`Granted by Educated: ${parent.educatedBackground||'unnamed background'}`
+  })));
+}
 function price(r,base){
   if(r.name==='Resistance [Element]'){if(['physical','mundane','fullphysical','fullmundane','physicalmundane'].includes(norm(r.detail)))return 21;if(['magical','magic','fullmagical','fullmagic'].includes(norm(r.detail)))return 70}
   if(r.name==='Special Movement [movement type]')return movements[r.movementType]||movements[Object.keys(movements).find(n=>norm(n)===norm(r.detail))]||base;
@@ -72,6 +79,14 @@ function suiteCheck(r,c,seen=new Set()){
 }
 function skillCheck(r,c){
   const s=c.state, skill=id=>s.skills.find(x=>x.id===id), next=grades[index(r.grade)+1];
+  if(r.name==='Educated'){
+    if(s.skills.filter(x=>x.name==='Educated').length>1)return 'Educated may only be taken once';
+    if(!String(r.educatedBackground||'').trim())return 'Name the job or background title associated with Educated';
+    const choices=r.educatedChoices||[];
+    if(choices.length!==3)return 'Choose exactly three Secondary skills for Educated';
+    for(const child of choices){const def=c.skills.find(d=>d.name===child.name);if(!def||def.category!=='Secondary'||child.name.startsWith('Artisan'))return 'Educated grants only Secondary skills, excluding Artisan';if(child.upgradeGrade&&!grades.includes(child.upgradeGrade))return 'Choose a valid individual upgrade grade';if(child.extraPointsPaid!=null&&(!Number.isFinite(child.extraPointsPaid)||child.extraPointsPaid<0))return 'Individual upgrade spending must be a non-negative number'}
+    if(new Set(choices.map(x=>x.name+':'+norm(x.detail))).size!==3)return 'Choose three distinct skills or specializations for Educated';
+  }
   if(['Always Outnumbered','Villainous'].includes(r.name)&&!meets(c.standingGrade(),'C'))return 'Requires Standing C or higher';
   if(r.name==='Villainous'&&!(s.criminalTitles||[]).some(t=>Object.hasOwn(crimes,t.name)&&meets(t.grade,'C')))return 'Villainous requires a C-grade or higher criminal title: Thief, Murder, Vandal, or Abuser';
   if(isStyle(r)){
@@ -124,5 +139,5 @@ function affinityCheck(a,c){
   if(!['Element','Freeform'].includes(a.core)&&!c.state.skills.some(s=>s.name==='Magic'&&meets(s.grade,a.grade)))return `Requires Magic ${a.grade}+`;
   return '';
 }
-root.IH_RULES={grades,stats,weapons,movements,makerStats,refinerStats,facilities,crimes,suiteKind,isStyle,price,details,styleTypes,foundationPool,skillCheck,suiteCheck,techniqueCheck,affinityCheck};
+root.IH_RULES={grades,stats,weapons,movements,makerStats,refinerStats,facilities,crimes,suiteKind,isStyle,educatedGrants,price,details,styleTypes,foundationPool,skillCheck,suiteCheck,techniqueCheck,affinityCheck};
 })(typeof window==='undefined'?globalThis:window);

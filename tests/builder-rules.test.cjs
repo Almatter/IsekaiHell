@@ -148,9 +148,13 @@ test('Educated upgrades preserve previously paid independent purchases without a
   old=JSON.parse(JSON.stringify(e));e.educatedChoices[0].upgradeGrade='B';f.a.finalizeEducatedChoices(e,old);assert.equal(f.a.skillCost(f.rules.educatedGrants(f.s)[0]),21);
   f.s.skills=[];assert.equal(f.rules.educatedGrants(f.s).length,0);
 });
-test('Educated requires a background, child details and normal child stat prerequisites',()=>{
+test('Educated requires its own prerequisite and child details, but waives child prerequisites',()=>{
   const f=fixture(),e=educated(f);e.educatedBackground='';assert.match(f.a.validateSkill(e).message,/background title/);e.educatedBackground='Scholar';e.educatedChoices[2].detail='';assert.match(f.a.validateSkill(e).message,/subject/);
-  e.educatedChoices[2].detail='Archivist';f.s.stats.Intelligence='F';assert.match(f.a.validateSkill(e).message,/Intelligence E/);
+  e.educatedChoices[2].detail='Archivist';f.s.stats.Intelligence='F';assert.equal(f.a.validateSkill(e).ok,true);
+  const child=f.rules.educatedGrants(f.s)[2];assert.equal(f.a.validateSkill(child).ok,true);
+  assert.equal(f.a.validateSkill({...child,grantedByEducated:undefined}).ok,false);
+  Object.keys(f.s.stats).forEach(k=>f.s.stats[k]='F');assert.match(f.a.validateSkill(e).message,/Character Grade E/);
+  e.limiters=[{type:'Charges',rank:1}];assert.match(f.a.validateSkill(e).message,/not eligible for limiters/);
 });
 test('Educated grants count for classes and ability components, but not ordinary racial requirements',()=>{
   const f=fixture(),e=educated(f);e.educatedChoices[2]={name:'Academia'};

@@ -34,3 +34,10 @@ Open `index.html` after extracting the full archive. The site is static and can 
 ## Tutorial scope
 
 The tutorial warns users that it takes about 10–15 minutes and that progress is not saved. It does not use localStorage/sessionStorage and does not grant World RP certification.
+
+### v0.11.1
+
+- Skill search no longer redraws the catalog on blur, preserving the first skill-panel click.
+- Educated grants waive individual prerequisites; Educated retains its own Character requirement and required choice details.
+- Ineligible skills no longer show limiter controls; imported invalid limiters remain flagged until edited.
+- Race artwork standard: male and female adult examples together on a plain textureless background. Revised missing-race drafts remain pending approval.

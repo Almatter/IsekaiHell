@@ -1,8 +1,12 @@
-# IH builder — remaining issues after v0.11.2
+# IH builder — remaining issues after v0.12.0
 
-Updated 2026-11-07. This is a fresh, continuously numbered list organized by the three requested categories. The previous list's **#14 (Educated)** is completed; numbers below replace the previous numbering.
+Updated 2026-11-07. Numbers remain stable for follow-up requests; completed #21 is removed below.
 
-## Completed in this round
+## Completed
+
+- **#21 Transformation builder:** structured inherited removals, actual-paid refunds, separate form purchases/upgrades, stats, equipment melding/retention, size checks, dependencies, form abilities and sheet/export support. Narrative justification for removals is assumed per the user.
+
+### Earlier completions
 
 - Educated grants three distinct non-Artisan Secondary choices, a background title, free linked grades, paid independent upgrades, class credit and ability/export entries. Individual child prerequisites are waived; Educated’s own Character prerequisite and required choice details still apply. Ordinary racial requirements exclude the grants; a race template explicitly specifying Educated (such as Half-Elf) may use them. Earlier individual upgrade spending is retained when Educated later advances.
 - Earned Points is editable and includes Scoop carry-in. Both count toward Standing and the spendable budget. Starting points remain 105 plus stat-reduction bonuses; automatic size bonuses are included in earned points. Older Scoop saves migrate once without changing the total budget.
@@ -39,7 +43,6 @@ Updated 2026-11-07. This is a fresh, continuously numbered list organized by the
 18. **Martial Ethos/Mastery benefits.** Initiative, student/master titles/assets, free Mastery techniques, Weapon Excellence/Precision and specialization's exclusion from free Mastery benefits. Foundations are implemented.
 19. **Advanced classes and class grants.** Add the Tier 2/3 catalog and predecessor requirements; instantiate grants such as Nomad's Talented Friends and class perk effects. All five starter classes, including Anchor, are now listed.
 20. **Item internal builder.** Actual purchases, internal spending, item stats and prerequisite/wielder checks.
-21. **Transformation internal builder.** Inherited/unusable features, refunds, form purchases, Size Change, nested-form restrictions and equipment melding.
 22. **Companion internal builder.** Shared expenditure, minimum development, forbidden skills, race/class eligibility and equipment.
 23. **Minion internal builder.** Calculated 56-point templates, B caps, spell/static mode, forbidden skills and grade-based numbers.
 24. **Tamer development.** Structured buddy rosters, size/stats/skills/elements, farm capacity, training, breeding, merging, awakening and downtime.
@@ -61,6 +64,6 @@ Updated 2026-11-07. This is a fresh, continuously numbered list organized by the
 
 ## Verification
 
-31 automated regression tests pass. Browser checks cover Educated selection/upgrades/export, safe Profession names, earned totals/Standing, and phone-width forms. Image verification covered all 110 races and 202 assigned public images. The three approved paired illustrations are installed; all 205 assigned assets exist and decode locally.
+43 automated regression tests pass. Browser checks cover Educated selection/upgrades/export, safe Profession names, earned totals/Standing, and phone-width forms. Image verification covered all 110 races and 202 assigned public images. The three approved paired illustrations are installed; all 205 assigned assets exist and decode locally.
 
 A final additional browser file-import check could not execute because automatic approval review reached its usage limit. Local migration and upgrade-accounting regression tests passed.

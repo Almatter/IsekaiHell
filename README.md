@@ -46,3 +46,9 @@ The tutorial warns users that it takes about 10–15 minutes and that progress i
 
 - Install approved Diwose, Zentail and Zentox paired race illustrations as WebP assets in both catalog and builder.
 - Refresh the remaining-issues list: bugs first, then validations, missing features and rules requiring clarification.
+
+### v0.12.0
+
+Transformation now has a structured form builder in Skill Grants. Disable inherited skills/features/abilities, receive actual-paid skill refunds, purchase or upgrade form skills/techniques/affinities/equipment, improve form stats, and compose form abilities. Worn equipment melds by default; retained items and natural equipment remain usable. Size changes require usable Size Change of sufficient grade and never change the point pool. Forms cannot purchase Transformation.
+
+All form changes stay separate from the base character and from other forms. Save/export preserves structured form data (schema 8), and the character sheet includes each form's complete skills, stats, abilities, equipment and accounting. Existing free-text form descriptions are preserved. Removal narrative justification is assumed; no extra approval field is required.

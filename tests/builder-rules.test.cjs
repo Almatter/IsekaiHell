@@ -161,10 +161,10 @@ test('Transformation charges only stat upgrades and additional purchases, preser
   const second=f.skill('Transformation');f.s.skillGrants[second.id]={name:'Other'};assert.equal(f.a.transformationBuild(second).spent,0);
   f.grant.form.stats.Strength='H';assert.match(f.a.transformationCheck(f.parent).errors.join(' '),/stats are inherited/);
 });
-test('Transformation validates size change distance and usable prerequisites without size point bonuses',()=>{
-  const f=formFixture();f.grant.form={size:'huge'};assert.match(f.a.transformationCheck(f.parent).errors.join(' '),/Size Change E/);
-  const size=f.skill('Size Change','E');let b=f.a.transformationCheck(f.parent);assert.equal(b.errors.length,0);assert.equal(b.refunds,0);assert.equal(b.spent,0);
-  f.grant.form.removedRefs=['skills:'+size.id];assert.match(f.a.transformationCheck(f.parent).errors.join(' '),/Size Change E/);
+test('Transformation ignores legacy form size; size belongs to the containing ability',()=>{
+  const f=formFixture();f.grant.form={size:'huge'};const b=f.a.transformationCheck(f.parent);
+  assert.equal(b.effective.origin.size,'medium');assert.equal(b.errors.length,0);assert.equal(b.refunds,0);assert.equal(b.spent,0);
+  assert.doesNotMatch(f.a.transformationSheet(f.parent),/^Size:/m);assert.equal(Object.hasOwn(f.form.normalize(f.grant),'size'),false);
 });
 test('Transformation rejects nested forms, overspending and dangling ability or inherited references',()=>{
   const f=formFixture(),fast=f.skill('Fast');f.s.abilities=[{id:'run',name:'Run',components:['skill:'+fast.id]}];f.grant.form={removedRefs:['skills:'+fast.id,'skills:missing'],added:{skills:[{id:'nested',name:'Transformation',grade:'A',limiters:[]},{id:'expensive',name:'Fast',grade:'A',limiters:[]}]}};
@@ -178,7 +178,7 @@ test('Transformation checks skill prerequisites against the form, including modi
 test('Transformation overlays inherit future base changes and preserve exact form upgrades across JSON',()=>{
   const f=formFixture(),fast=f.skill('Fast');let effective=f.form.build(f.s,f.grant);effective.skills.find(r=>r.id===fast.id).grade='E';f.grant.form=f.form.capture(f.s,effective,f.grant);
   fast.notes='New base note';const b=f.a.transformationBuild(f.parent);assert.equal(b.effective.skills.find(r=>r.id===fast.id).notes,'New base note');assert.equal(b.spent,7);
-  const restored=f.a.mergeState(JSON.parse(JSON.stringify(f.s)));f.a.setState(restored);assert.equal(f.a.transformationBuild(restored.skills[0]).spent,7);assert.match(f.a.generateSheet(),/TRANSFORMATION FORM/);assert.match(f.a.generateSheet(),/Ghost form/);assert.match(f.a.transformationSheet(restored.skills[0]),/Fast.* E/);
+  const restored=f.a.mergeState(JSON.parse(JSON.stringify(f.s)));f.a.setState(restored);assert.equal(f.a.transformationBuild(restored.skills[0]).spent,7);assert.match(f.a.generateSheet(),/Form: Ghost form/);assert.match(f.a.generateSheet(),/Ghost form/);assert.match(f.a.transformationSheet(restored.skills[0]),/Fast.* E/);
 });
 test('Transformation inherits existing activation abilities but cannot buy, upgrade or refund its own source',()=>{
   const f=formFixture();f.s.abilities=[{id:'activate',name:'Become mist',components:['skill:'+f.parent.id]}];
@@ -194,6 +194,17 @@ test('Transformation supports partial grade refunds and independently paid Educa
 test('Transformation preserves legacy form notes and does not freeze unrelated inherited fields',()=>{
   const f=formFixture(),fast=f.skill('Fast');f.grant.details='Legacy text build';f.grant.notes='Keep this note';const effective=f.form.build(f.s,f.grant);effective.skills.find(r=>r.id===fast.id).notes='Form-specific note';f.grant.form=f.form.capture(f.s,effective,f.grant);fast.grade='E';
   assert.equal(f.a.transformationBuild(f.parent).effective.skills.find(r=>r.id===fast.id).grade,'E');const imported=f.a.mergeState(JSON.parse(JSON.stringify(f.s)));assert.equal(imported.skillGrants[f.parent.id].details,'Legacy text build');assert.equal(imported.skillGrants[f.parent.id].notes,'Keep this note');
+});
+test('Sheets show form stat spending, gained/lost skills, and distinct character/form balances inline',()=>{
+  const f=formFixture(),fast=f.skill('Fast');f.s.stats.Strength='F';
+  f.s.equipment=[{id:'armor',name:'Iron armor',types:['heavy'],grade:'F'}];
+  f.grant.form={size:'huge',stats:{Strength:'E'},removedRefs:['skills:'+fast.id],added:{skills:[{id:'mist',name:'Feature [Feature Name]',detail:'Mist body',grade:'F',limiters:[]}]}};
+  const before=f.a.totalSpent(),sheet=f.a.generateSheet();
+  assert.match(sheet,/Strength: F → E \(7 form points\)/);assert.match(sheet,/Form Points Available: 35 \(28 from Transformation \+ 7 refunded\)/);assert.match(sheet,/Form Points Spent: 14/);assert.match(sheet,/Form Points Remaining: 21/);
+  assert.match(sheet,/Gained in Form:\n\s+Skill: .*Mist body.* F/);assert.match(sheet,/Lost in Form:\n\s+Skill: Fast/);assert.match(sheet,/Melded Equipment: Iron armor F/);
+  assert.doesNotMatch(sheet,/Earned Points Note|Melded equipment \(unavailable\)|^\s*Size:/m);assert.match(sheet,/Character Points Remaining:/);
+  assert.ok(sheet.indexOf('Form: Ghost form')<sheet.indexOf('Change Log:'));assert.equal(f.a.totalSpent(),before);assert.equal(f.s.stats.Strength,'F');
+  f.grant.form.stats.Strength='D';const updated=f.a.generateSheet();assert.match(updated,/Strength: F → D \(14 form points\)/);assert.match(updated,/Form Points Remaining: 14/);
 });
 test('Educated grants exactly three non-Artisan Secondary skills and may only be taken once',()=>{
   const f=fixture(),e=educated(f);assert.equal(f.a.validateSkill(e).ok,true);assert.equal(f.a.acquiredSkills().length,4);

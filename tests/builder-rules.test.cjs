@@ -6,8 +6,8 @@ const vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 function fixture(){
   const $=()=>({text(){return this},html(){return ''}}),ctx={window:{},jQuery:$,console};vm.createContext(ctx);
-  for(const file of ['data/meta.js','data/skills.js','data/techniques.js','data/affinities.js','data/races.js','js/builder-rules.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx,{filename:file});
-  const source=fs.readFileSync(path.join(root,'js/app.js'),'utf8').replace('$(init);','window.testApi={defaultState,setState:s=>state=s,validateSkill,ruleContext,validation,skillCost,techniqueCost,techniqueGrade,affinityCost,mergeState,generateSheet,skillRuleSummary,finalizeEducatedChoices,componentPool,acquiredSkills,pointsEarned,pointsAtStart,availablePoints,standingGrade,statGradeOptions,classStatus,racialValidation,raceRequirementChecks,skillDisplayName,automaticTitles,totalSpent};');
+  for(const file of ['data/meta.js','data/skills.js','data/techniques.js','data/affinities.js','data/races.js','js/builder-rules.js','js/transformation.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx,{filename:file});
+  const source=fs.readFileSync(path.join(root,'js/app.js'),'utf8').replace('$(init);','window.testApi={defaultState,setState:s=>state=s,validateSkill,ruleContext,validation,skillCost,techniqueCost,techniqueGrade,affinityCost,mergeState,generateSheet,skillRuleSummary,finalizeEducatedChoices,componentPool,acquiredSkills,pointsEarned,pointsAtStart,availablePoints,standingGrade,statGradeOptions,classStatus,racialValidation,raceRequirementChecks,skillDisplayName,automaticTitles,totalSpent,transformationBuild,transformationCheck,transformationSheet,withCharacter};');
   vm.runInContext(source,ctx,{filename:'app.js'});
   const a=ctx.window.testApi,s=a.defaultState(),rules=ctx.window.IH_RULES;
   Object.keys(s.stats).forEach(k=>s.stats[k]='B');s.identity.name='Test';s.origin.evolutionPath='native';s.origin.perk='Born For This';a.setState(s);
@@ -127,13 +127,74 @@ test('Incurable and Indirect are cataloged as martial cores without absorbing ad
 });
 test('required subjects and imported legacy data get validation rather than invented foundations',()=>{
   const f=fixture();for(const name of ['Feature [Feature Name]','Special Movement [movement type]','Profession [Name of profession]','Resistance [Element]','Language','Gear'])assert.equal(f.a.validateSkill(f.skill(name,'F',{detail:''})).ok,false,name);
-  const imported=f.a.mergeState({schema:5,skills:[{id:'old',name:'Fighting Style [Style Name]',grade:'F',detail:'Sword'}]});assert.equal(imported.schema,7);assert.equal(imported.criminalTitles.length,0);f.a.setState(imported);assert.match(f.a.validateSkill(imported.skills[0]).message,/weapon type/);
+  const imported=f.a.mergeState({schema:5,skills:[{id:'old',name:'Fighting Style [Style Name]',grade:'F',detail:'Sword'}]});assert.equal(imported.schema,8);assert.equal(imported.criminalTitles.length,0);f.a.setState(imported);assert.match(f.a.validateSkill(imported.skills[0]).message,/weapon type/);
 });
 test('JSON roundtrip preserves dependencies, criminal grades, facility types and chosen stats',()=>{
   const f=schoolFixture();f.s.criminalTitles=[{id:'c',name:'Thief',grade:'C',notes:'Staff award'}];f.s.assets=[{id:'a',name:'Pen',grade:'F',assetKind:'Breeding Pen'}];const copy=f.a.mergeState(JSON.parse(JSON.stringify(f.s)));
   assert.equal(copy.skills.find(s=>s.id===f.school.id).foundationRefs.join(','),f.school.foundationRefs.join(','));assert.equal(copy.criminalTitles[0].grade,'C');assert.equal(copy.assets[0].assetKind,'Breeding Pen');
 });
 function educated(f,extra={}){return f.skill('Educated','F',{educatedBackground:'Academy Graduate',educatedChoices:[{name:'Arcana',detail:'',upgradeGrade:'F'},{name:'History',detail:'',upgradeGrade:'F'},{name:'Profession [Name of profession]',detail:'Archive cataloguer',governingStat:'Intelligence',upgradeGrade:'F'}],...extra})}
+function formFixture(){const f=fixture(),skill=f.skill('Transformation');f.s.skillGrants[skill.id]={name:'Ghost form',details:'An ethereal body',notes:''};return {...f,parent:skill,grant:f.s.skillGrants[skill.id],form:f.ctx.window.IH_TRANSFORMATION}}
+test('Transformation gives 28 per grade and never changes the parent budget or purchases',()=>{
+  const f=formFixture(),fast=f.skill('Fast','E');const before=f.a.totalSpent();f.grant.form={removedRefs:['skills:'+fast.id]};
+  let b=f.a.transformationBuild(f.parent);assert.equal(b.baseBudget,28);assert.equal(b.refunds,14);assert.equal(b.budget,42);assert.equal(f.a.totalSpent(),before);assert.ok(f.s.skills.includes(fast));
+  f.parent.grade='D';assert.equal(f.a.transformationBuild(f.parent).baseBudget,84);
+});
+test('Transformation refunds actual discounted spending and never refunds free Educated grants twice',()=>{
+  const f=formFixture(),fast=f.skill('Fast');f.s.origin.bornTargets=[fast.id];const e=educated(f);e.educatedChoices[0].extraPointsPaid=7;e.educatedChoices[0].upgradeGrade='E';
+  const paid=f.a.totalSpent();f.grant.form={removedRefs:['skills:'+fast.id,'skills:'+fast.id,'skills:'+e.id,'skills:educated:'+e.id+':0']};
+  const b=f.a.transformationBuild(f.parent);assert.equal(b.refunds,14);assert.equal(b.effective.skills.some(r=>r.id===e.id),false);assert.equal(f.a.totalSpent(),paid);
+});
+test('Transformation selectively disables paid and cosmetic features and abilities without invented refunds',()=>{
+  const f=formFixture(),feature=f.skill('Feature [Feature Name]','F',{detail:'Wings'});f.s.identity.features='Fur; Blue eyes';f.s.abilities=[{id:'flight',name:'Flight',components:['skill:'+feature.id]}];
+  f.grant.form={removedRefs:['skills:'+feature.id,'feature:'+encodeURIComponent('Fur'),'abilities:flight','origin-free']};
+  const b=f.a.transformationBuild(f.parent);assert.equal(b.refunds,7);assert.equal(b.effective.identity.features,'Blue eyes');assert.equal(b.effective.abilities.length,0);assert.equal(b.effective.formDisableOriginSkill,true);assert.equal(f.s.identity.features,'Fur; Blue eyes');
+});
+test('Transformation equipment melds by default, natural equipment persists, and melding refunds nothing',()=>{
+  const f=formFixture();f.s.equipment=[{id:'sword',name:'Sword',types:['melee'],grade:'F'},{id:'claws',name:'Claws',types:['natural-melee'],grade:'F'}];
+  let b=f.a.transformationBuild(f.parent);assert.deepEqual(Array.from(b.effective.equipment,r=>r.id),['claws']);assert.equal(b.refunds,0);
+  f.grant.form={retainedEquipmentIds:['sword']};b=f.a.transformationBuild(f.parent);assert.deepEqual(Array.from(b.effective.equipment,r=>r.id),['sword']);assert.equal(b.spent,0);assert.equal(b.refunds,0);
+});
+test('Transformation charges only stat upgrades and additional purchases, preserving independent forms',()=>{
+  const f=formFixture();f.s.stats.Strength='F';f.grant.form={stats:{Strength:'D'},added:{skills:[{id:'new',name:'Fast',grade:'E',detail:'',limiters:[]}]}};
+  const b=f.a.transformationBuild(f.parent);assert.equal(b.spent,28);assert.equal(b.remaining,0);assert.equal(f.s.stats.Strength,'F');assert.equal(f.s.skills.length,1);
+  const second=f.skill('Transformation');f.s.skillGrants[second.id]={name:'Other'};assert.equal(f.a.transformationBuild(second).spent,0);
+  f.grant.form.stats.Strength='H';assert.match(f.a.transformationCheck(f.parent).errors.join(' '),/stats are inherited/);
+});
+test('Transformation validates size change distance and usable prerequisites without size point bonuses',()=>{
+  const f=formFixture();f.grant.form={size:'huge'};assert.match(f.a.transformationCheck(f.parent).errors.join(' '),/Size Change E/);
+  const size=f.skill('Size Change','E');let b=f.a.transformationCheck(f.parent);assert.equal(b.errors.length,0);assert.equal(b.refunds,0);assert.equal(b.spent,0);
+  f.grant.form.removedRefs=['skills:'+size.id];assert.match(f.a.transformationCheck(f.parent).errors.join(' '),/Size Change E/);
+});
+test('Transformation rejects nested forms, overspending and dangling ability or inherited references',()=>{
+  const f=formFixture(),fast=f.skill('Fast');f.s.abilities=[{id:'run',name:'Run',components:['skill:'+fast.id]}];f.grant.form={removedRefs:['skills:'+fast.id,'skills:missing'],added:{skills:[{id:'nested',name:'Transformation',grade:'A',limiters:[]},{id:'expensive',name:'Fast',grade:'A',limiters:[]}]}};
+  const errors=f.a.transformationCheck(f.parent).errors.join(' ');assert.match(errors,/cannot purchase or upgrade Transformation/);assert.match(errors,/over budget/);assert.match(errors,/no longer exists/);assert.match(errors,/component is unavailable/);
+});
+test('Transformation checks skill prerequisites against the form, including modified stats and melded weapons',()=>{
+  const f=formFixture();f.s.stats.Speed='F';f.grant.form={added:{skills:[{id:'fast',name:'Fast',grade:'F',detail:'',limiters:[]}]}};
+  assert.match(f.a.transformationCheck(f.parent).errors.join(' '),/Speed E/);f.grant.form.stats={Speed:'E'};assert.equal(f.a.transformationCheck(f.parent).errors.length,0);
+  const style=f.style();assert.match(f.a.transformationCheck(f.parent).errors.join(' '),/equipment F/);f.grant.form.retainedEquipmentIds=f.s.equipment.map(r=>r.id);assert.equal(f.a.transformationCheck(f.parent).errors.length,0);
+});
+test('Transformation overlays inherit future base changes and preserve exact form upgrades across JSON',()=>{
+  const f=formFixture(),fast=f.skill('Fast');let effective=f.form.build(f.s,f.grant);effective.skills.find(r=>r.id===fast.id).grade='E';f.grant.form=f.form.capture(f.s,effective,f.grant);
+  fast.notes='New base note';const b=f.a.transformationBuild(f.parent);assert.equal(b.effective.skills.find(r=>r.id===fast.id).notes,'New base note');assert.equal(b.spent,7);
+  const restored=f.a.mergeState(JSON.parse(JSON.stringify(f.s)));f.a.setState(restored);assert.equal(f.a.transformationBuild(restored.skills[0]).spent,7);assert.match(f.a.generateSheet(),/TRANSFORMATION FORM/);assert.match(f.a.generateSheet(),/Ghost form/);assert.match(f.a.transformationSheet(restored.skills[0]),/Fast.* E/);
+});
+test('Transformation inherits existing activation abilities but cannot buy, upgrade or refund its own source',()=>{
+  const f=formFixture();f.s.abilities=[{id:'activate',name:'Become mist',components:['skill:'+f.parent.id]}];
+  assert.equal(f.a.transformationCheck(f.parent).errors.length,0);assert.equal(f.a.transformationBuild(f.parent).effective.skills[0].id,f.parent.id);
+  f.grant.form={removedRefs:['skills:'+f.parent.id]};assert.equal(f.a.transformationBuild(f.parent).refunds,0);assert.ok(f.a.transformationCheck(f.parent).errors.length>0);
+  f.grant.form={updated:{skills:[{id:f.parent.id,grade:'E'}]}};assert.match(f.a.transformationCheck(f.parent).errors.join(' '),/cannot purchase or upgrade Transformation/);
+});
+test('Transformation supports partial grade refunds and independently paid Educated child removal',()=>{
+  const f=formFixture(),fast=f.skill('Fast','D');f.grant.form={updated:{skills:[{id:fast.id,grade:'F'}]}};assert.equal(f.a.transformationBuild(f.parent).refunds,14);
+  const e=educated(f);e.educatedChoices[0].upgradeGrade='E';e.educatedChoices[0].extraPointsPaid=7;
+  f.grant.form={removedRefs:['skills:educated:'+e.id+':0']};const b=f.a.transformationBuild(f.parent);assert.equal(b.refunds,7);assert.equal(f.a.withCharacter(b.effective,()=>f.a.acquiredSkills().filter(r=>r.grantedByEducated).length),2);
+});
+test('Transformation preserves legacy form notes and does not freeze unrelated inherited fields',()=>{
+  const f=formFixture(),fast=f.skill('Fast');f.grant.details='Legacy text build';f.grant.notes='Keep this note';const effective=f.form.build(f.s,f.grant);effective.skills.find(r=>r.id===fast.id).notes='Form-specific note';f.grant.form=f.form.capture(f.s,effective,f.grant);fast.grade='E';
+  assert.equal(f.a.transformationBuild(f.parent).effective.skills.find(r=>r.id===fast.id).grade,'E');const imported=f.a.mergeState(JSON.parse(JSON.stringify(f.s)));assert.equal(imported.skillGrants[f.parent.id].details,'Legacy text build');assert.equal(imported.skillGrants[f.parent.id].notes,'Keep this note');
+});
 test('Educated grants exactly three non-Artisan Secondary skills and may only be taken once',()=>{
   const f=fixture(),e=educated(f);assert.equal(f.a.validateSkill(e).ok,true);assert.equal(f.a.acquiredSkills().length,4);
   e.educatedChoices.pop();assert.match(f.a.validateSkill(e).message,/exactly three/);e.educatedChoices.push({name:'Artisan [type]',detail:'Metal'});assert.match(f.a.validateSkill(e).message,/excluding Artisan/);

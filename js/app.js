@@ -12,9 +12,11 @@ let ambientTimers=[];
 let lastHoverSound=0;
 let portraitTimer=null;
 let state=defaultState();
+let transformationEditor=null;
+const FORM=window.IH_TRANSFORMATION;
 
 function defaultState(){return {
-  schema:7, appVersion:M.version, earnedPoints:0,
+  schema:8, appVersion:M.version, earnedPoints:0,
   identity:{name:'',player:'',raceTitle:'',imageUrl:'',height:'',weight:'',languages:['Common','Terran'],features:'',backstory:'',currentLife:''},
   origin:{type:'isekai',size:'medium',scoopPoints:0,evolutionPath:'variant',evolutionTier:'mundane',tree:'prime',parents:[],perk:'Chosen Path',chosenPathSkill:'',chosenPathDetail:'',bornTargets:[],versatileItem:'melee',versatileStat:'Strength',raceId:'',raceOverrideReason:'',freeSkillDetail:''},
   stats:{Strength:'F',Precision:'F',Intelligence:'F',Vitality:'F',Speed:'F'},
@@ -74,7 +76,7 @@ function chosenPathDetailInfo(name){
 function techniqueDisplayName(r){if(r.core==='Drain'){const stat=r.targetStat||'?';return r.detail?`${r.detail} [Drain: ${stat}]`:`Drain [${stat}]`}return r.detail||r.core}
 function affinityDisplayName(r){if(r.core==='Drain'){const stat=r.targetStat||'?';return r.detail?`${r.detail} [Drain: ${stat}]`:`Drain [${stat}]`}return r.detail||r.core}
 function chosenPathEligible(s){if(!s||s.baseCost!==7)return false;if((s.tags||[]).some(t=>['Suite','Core','Exclusive'].includes(t)))return false;const blocked=['Fighting Style [Style Name]','Magic','Educated','Tamer','Magic School: [name of a school of magic]','Magic Domain [magic name]','Martial Ethos [Weapon Type] (name)','Martial Mastery [Weapon Type] (name)'];if(blocked.includes(s.name)||s.name.startsWith('Masterwork ')||s.name.startsWith('Tamer '))return false;const token=s.name.replace(/\[[^\]]+\]/g,'').replace(/[^A-Za-z ]/g,'').trim();if(token.length>3&&SKILLS.some(o=>o!==s&&(o.prerequisite||'').toLowerCase().includes(token.toLowerCase())))return false;return true}
-function acquiredSkills(){return [...state.skills,...RULES.educatedGrants(state)]}
+function acquiredSkills(){return [...state.skills,...RULES.educatedGrants(state).filter(r=>!(state.formDisabledGrantIds||[]).includes(r.id))]}
 function findSkillRows(namePart,rows=acquiredSkills()){const q=namePart.toLowerCase(); return rows.filter(r=>r.name.toLowerCase().includes(q))}
 function bestSkillGrade(namePart,rows=acquiredSkills()){let best=null;findSkillRows(namePart,rows).forEach(r=>{if(!best||gradeIndex(r.grade)>gradeIndex(best))best=r.grade});return best}
 function bestSkillGradeExact(name,rows=acquiredSkills()){let best=null;rows.filter(r=>r.name===name).forEach(r=>{if(!best||gradeIndex(r.grade)>gradeIndex(best))best=r.grade});return best}
@@ -179,7 +181,8 @@ function bindGlobal(){
   $('#btnAddAffinity').on('click',()=>editAffinity()); $('#affinityList').on('click','button[data-edit-aff]',function(){editAffinity($(this).data('edit-aff'))}).on('click','button[data-remove-aff]',function(){state.affinities=state.affinities.filter(x=>x.id!==$(this).data('remove-aff'));renderAll()});
   $('#btnAddEquipment').on('click',()=>editEquipment()); $('#equipmentList').on('click','button[data-remove-custom]',function(){state.customRows=state.customRows.filter(x=>x.id!==$(this).data('remove-custom'));renderAll()}).on('click','button[data-edit-eq]',function(){editEquipment($(this).data('edit-eq'))}).on('click','button[data-remove-eq]',function(){state.equipment=state.equipment.filter(x=>x.id!==$(this).data('remove-eq'));renderAll()});
   $('#btnAddSwitchEquipment').on('click',()=>editSwitchEquipment()); $('#switchEquipmentList').on('click','button[data-edit-switch]',function(){editSwitchEquipment($(this).data('edit-switch'))}).on('click','button[data-remove-switch]',function(){state.switchLinks=(state.switchLinks||[]).filter(x=>x.id!==$(this).data('remove-switch'));renderAll()});
-  $('#skillGrantWorkspace').on('input change','[data-grant-field]',handleSkillGrantField);
+  $('#skillGrantWorkspace').on('input change','[data-grant-field]',handleSkillGrantField).on('change','[data-form-field]',handleTransformationField).on('click','[data-form-edit]',openTransformationEntry).on('click','[data-form-delete]',deleteTransformationEntry);
+  $modal.on('cancel',function(){if(transformationEditor)restoreTransformationEditor(false)}).on('close',function(){if(transformationEditor)restoreTransformationEditor(false)});
   $('#btnAddAsset').on('click',()=>editAsset()); $('#assetList').on('click','button[data-remove-custom]',function(){state.customRows=state.customRows.filter(x=>x.id!==$(this).data('remove-custom'));renderAll()}).on('click','button[data-edit-asset]',function(){editAsset($(this).data('edit-asset'))}).on('click','button[data-remove-asset]',function(){state.assets=state.assets.filter(x=>x.id!==$(this).data('remove-asset'));renderAll()});
   $('#btnAddAbility').on('click',()=>editAbility()); $('#abilityList').on('click','button[data-edit-ability]',function(){editAbility($(this).data('edit-ability'))}).on('click','button[data-remove-ability]',function(){state.abilities=state.abilities.filter(x=>x.id!==$(this).data('remove-ability'));renderAll()});
   $('#btnAddTitle').on('click',()=>editTitle()); $('#titleList').on('click','button[data-equip-title]',function(){const t=state.titles.find(x=>x.id===$(this).data('equip-title'));if(t)t.equipped=!t.equipped;renderAll()}).on('click','button[data-equip-class]',function(){equipClass($(this).data('equip-class'));}).on('click','button[data-equip-asset-title]',function(){const a=state.assets.find(x=>x.id===$(this).data('equip-asset-title'));if(a)a.titleEquipped=!a.titleEquipped;renderAll()}).on('click','button[data-remove-title]',function(){state.titles=state.titles.filter(x=>x.id!==$(this).data('remove-title'));renderAll()});
@@ -312,6 +315,7 @@ function renderSelectedSkills(){
   $('#selectedSkills').html(html||'<div class="muted">No skills selected.</div>');
 }
 function freeSkillDisplay(){
+  if(state.formDisableOriginSkill)return null;
   const sg=standingGrade();
   if(state.origin.perk==='Chosen Path'){
     if(!state.origin.chosenPathSkill)return null;
@@ -444,6 +448,7 @@ function editSkill(id,newName){
   existing.forEach((l,i)=>{$(`.mLimiterType[data-i="${i}"]`).val(l.type||'');$(`.mLimiterRank[data-i="${i}"]`).val(String(l.rank||1))});
 }
 function validateSkill(r){
+  if(transformationEditor&&r.name==='Transformation')return {ok:false,message:'A Transformation form cannot purchase Transformation'};
   if(r.custom)return {ok:true,message:'Custom / override row'};const def=getSkillDef(r.name);if(!def)return {ok:true,message:'Manual rule check'};
   const detailErr=detailRequirement(r);if(detailErr)return {ok:false,message:detailErr};
   if(r.name==='Narrative Booster'&&!String(r.detail||'').trim())return {ok:false,message:'Narrative Booster needs the activity/title it represents in the Detail field'};
@@ -545,6 +550,87 @@ function editSwitchEquipment(id){
 function renderSwitchEquipment(){const rows=(state.switchLinks||[]).map(l=>{const a=state.equipment.find(e=>e.id===l.a),b=state.equipment.find(e=>e.id===l.b);if(!a||!b)return'';return `<div class="selected-row"><div><div class="row-title">${esc(a.name)} ⇄ ${esc(b.name)} <span class="pill">SWITCH</span></div><div class="row-meta">7 pts // one active at a time // 1 action to switch${l.notes?' // '+esc(l.notes):''}</div></div><div class="row-actions"><button class="ui-btn small ghost" data-edit-switch="${l.id}">Edit</button><button class="ui-btn small danger" data-remove-switch="${l.id}">×</button></div></div>`}).join('');$('#switchEquipmentList').html(rows||'<div class="muted">No Switch Equipment links.</div>')}
 
 function grantSkillRows(){return state.skills.filter(s=>s.name==='Item'||s.name==='Transformation')}
+function withCharacter(character,fn){const previous=state;state=character;try{return fn()}finally{state=previous}}
+function skillGrantName(skill){return state.skillGrants?.[skill.id]?.name||'Unnamed Transformation'}
+function formCosts(character,sourceId){return withCharacter(character,()=>[
+  ...acquiredSkills().filter(r=>r.id!==sourceId).map(r=>({ref:FORM.ref('skills',r),name:skillDisplayName(r)+' '+r.grade,cost:Math.max(0,skillCost(r)),refundable:true})),
+  ...state.techniques.map(r=>({ref:FORM.ref('techniques',r),name:techniqueDisplayName(r)+' '+techniqueGrade(r),cost:techniqueCost(r),refundable:true})),
+  ...state.affinities.map(r=>({ref:FORM.ref('affinities',r),name:affinityDisplayName(r)+' '+r.grade,cost:affinityCost(r),refundable:true})),
+  ...state.equipment.map(r=>({ref:FORM.ref('equipment',r),name:r.name+' '+r.grade,cost:equipmentCost(r),refundable:false})),
+  ...state.customRows.map(r=>({ref:FORM.ref('customRows',r),name:r.name,cost:Math.max(0,Number(r.cost)||0),refundable:['Skill','Feature'].includes(r.section)}))
+])}
+function transformationBuild(skill,base=state){
+  const grant=base.skillGrants?.[skill.id]||{},form=FORM.normalize(grant),effective=FORM.build(base,grant);
+  const ledger=FORM.ledger(formCosts(base,skill.id),formCosts(effective,skill.id),M.statCostFromF,base.stats,effective.stats),budget=grantBudget(skill)+ledger.refunds;
+  return {form,effective,...ledger,baseBudget:grantBudget(skill),budget,remaining:budget-ledger.spent};
+}
+function transformationCheck(skill){
+  const base=state,b=transformationBuild(skill),errors=[],warnings=[],known=new Set([...formCosts(base,skill.id).map(r=>r.ref),...base.abilities.map(r=>FORM.ref('abilities',r)),...FORM.features(base).map(r=>r.ref),'origin-free']);
+  b.form.removedRefs.forEach(ref=>{if(ref==='skills:'+skill.id)errors.push('The Transformation purchase funding this form cannot refund itself');else if(!known.has(ref))errors.push('A removed entry no longer exists: '+ref)});
+  for(const key of FORM.collections){const seen=new Set();for(const r of b.effective[key]){if(!r.id||seen.has(r.id))errors.push('Duplicate or missing entry identifier in '+key);seen.add(r.id)}for(const row of b.form.updated[key])if(!base[key].some(r=>r.id===row.id))errors.push('An edited inherited entry no longer exists: '+row.id)}
+  if(b.form.retainedEquipmentIds?.some(id=>!base.equipment.some(r=>r.id===id)))errors.push('Retained equipment was removed from the base character');
+  for(const [name,grade] of Object.entries(b.effective.stats)){if(!STAT_ORDER.includes(grade)||grade==='S')errors.push(name+': choose a stat grade through A');else if(statIndex(grade)<statIndex(base.stats[name]))errors.push(name+': stats are inherited; lowering them does not fund a form')}
+  if(b.remaining<0)errors.push('Form is '+Math.abs(b.remaining)+' points over budget');
+  if(b.remaining>0)warnings.push(b.remaining+' form points remain unspent');
+  const sizes=['diminutive','tiny','small','medium','large','huge','gargantuan'];
+  if(!sizes.includes(b.effective.origin.size))errors.push('Select a valid form size');
+  withCharacter(b.effective,()=>{
+    if(b.form.added.skills.some(r=>r.name==='Transformation')||b.form.updated.skills.some(r=>r.name==='Transformation'||base.skills.some(p=>p.id===r.id&&p.name==='Transformation')))errors.push('Forms cannot purchase or upgrade Transformation');
+    acquiredSkills().forEach(r=>{const check=validateSkill(r);if(!check.ok)errors.push(skillDisplayName(r)+': '+check.message);else if(check.message.includes('Manual'))warnings.push(skillDisplayName(r)+': review its prerequisite text')});
+    state.techniques.forEach(r=>{const error=RULES.techniqueCheck(r,ruleContext());if(error)errors.push(techniqueDisplayName(r)+': '+error)});
+    state.affinities.forEach(r=>{const error=RULES.affinityCheck(r,ruleContext());if(error)errors.push(affinityDisplayName(r)+': '+error)});
+    state.equipment.forEach(r=>{const check=equipmentValidation(r);if(!check.ok)errors.push(r.name+': '+check.msg)});
+    const distance=Math.abs(sizes.indexOf(base.origin.size)-sizes.indexOf(state.origin.size));
+    if(distance&&!state.skills.some(r=>r.name==='Size Change'&&gradeIndex(r.grade)+1>=distance&&validateSkill(r).ok))errors.push('This size difference requires usable Size Change '+(GRADE_ORDER[distance-1]||'S')+' or higher; size changes grant no points');
+    const pool=new Set(componentPool().map(r=>r.id));
+    state.abilities.forEach(r=>{if((r.components||[]).some(id=>!pool.has(id)))errors.push(r.name+': an ability component is unavailable in this form')});
+  });
+  return {...b,errors:[...new Set(errors)],warnings:[...new Set(warnings)]};
+}
+function formEntryName(kind,row){return kind==='skills'?skillDisplayName(row):kind==='techniques'?techniqueDisplayName(row):kind==='affinities'?affinityDisplayName(row):row.name||'Unnamed entry'}
+function renderTransformation(skill){
+  const g=state.skillGrants?.[skill.id]||{},b=transformationCheck(skill),f=b.form,id=esc(skill.id),removed=new Set(f.removedRefs),baseCosts=new Map(formCosts(state,skill.id).map(r=>[r.ref,r]));
+  const toggle=(ref,name,cost=0)=>`<label class="form-choice"><input type="checkbox" data-form-field="removed" data-form-id="${id}" value="${esc(ref)}" ${removed.has(ref)?'checked':''}><span>${esc(name)} <small>${cost?cost+' pts refunded':'no point refund'}</small></span></label>`;
+  let removals=['skills','techniques','affinities','abilities','customRows'].map(kind=>{
+    const rows=kind==='skills'?acquiredSkills().filter(r=>r.id!==skill.id):state[kind];
+    return rows.map(r=>{const ref=FORM.ref(kind,r);return toggle(ref,formEntryName(kind,r)+(r.grade?' '+r.grade:''),baseCosts.get(ref)?.refundable?baseCosts.get(ref).cost:0)}).join('');
+  }).join('')+FORM.features(state).map(r=>toggle(r.ref,r.name)).join('');
+  if(freeSkillDisplay())removals+=toggle('origin-free',freeSkillDisplay().name+' (free origin skill)');
+  const inheritedEquipment=state.equipment.map(r=>{const retained=b.effective.equipment.some(e=>e.id===r.id);return `<label class="form-choice"><input type="checkbox" data-form-field="equipment" data-form-id="${id}" value="${esc(r.id)}" ${retained?'checked':''}><span>${esc(r.name)} ${esc(r.grade)}<small>${retained?'Available in form':'Melded / unavailable'}; no refund for melding equipment</small></span></label>`}).join('');
+  const rows=FORM.collections.map(kind=>{
+    const entries=b.effective[kind].filter(r=>kind!=='skills'||r.name!=='Transformation');if(!entries.length)return '';
+    return `<h4>${esc({customRows:'Custom skills / features',affinities:'Affinities',techniques:'Techniques',equipment:'Equipment',abilities:'Abilities',skills:'Skills'}[kind])}</h4>`+entries.map(r=>{const inherited=state[kind].some(x=>x.id===r.id);return `<div class="selected-row"><div><strong>${esc(formEntryName(kind,r))} ${esc(r.grade||'')}</strong><div class="muted">${inherited?'Inherited'+(f.updated[kind].some(x=>x.id===r.id)?' / modified':''):'Form purchase'}</div></div><div class="row-actions">${kind!=='customRows'?`<button type="button" class="ui-btn small ghost" data-form-edit="${kind}" data-form-id="${id}" data-entry-id="${esc(r.id)}">Edit</button>`:''}${!inherited?`<button type="button" class="ui-btn small danger" data-form-delete="${kind}" data-form-id="${id}" data-entry-id="${esc(r.id)}">Remove</button>`:''}</div></div>`}).join('');
+  }).join('');
+  const skillOptions=SKILLS.filter(r=>r.name!=='Transformation'&&r.name!=='Affinity [type]'&&r.name!=='Asset').map(r=>`<option value="${esc(r.name)}">${esc(r.name)}</option>`).join('');
+  return `<section class="follower-section grant-section"><div class="follower-section-head"><h3>Transformation Form <span class="pill">${esc(skill.grade)}</span></h3><span class="follower-budget ${b.remaining<0?'over':''}">${b.spent} / ${b.budget} form pts</span></div><div class="rule-callout">Self only; fixed form. F-grade lasts one post. Inherits titles, stats, skills and abilities. Worn equipment melds unless retained below. Transformation cannot be purchased or upgraded inside a form. The current Transformation purchase cannot fund its own refund.</div><div class="follower-grid"><label>Form Name<input data-grant-field="name" data-grant-skill="${id}" value="${esc(g.name||'')}"></label><label class="wide">Appearance / form description<textarea rows="3" data-grant-field="details" data-grant-skill="${id}">${esc(g.details||'')}</textarea></label></div><div class="rule-callout"><strong>${b.baseBudget} from Transformation + ${b.refunds} refunded = ${b.budget} available</strong><br>${b.spent} spent; ${b.remaining} remaining. All accounting applies only while transformed; the base character keeps its purchases and budget. Refunds use paid costs, including discounts; free grants do not produce points.</div><details><summary>Remove inherited skills / features / abilities</summary><p>Check entries that cannot be used in this form. Narrative justification is assumed. Abilities, free features and free grants can be disabled without a refund. Remove dependent techniques or abilities separately when needed.</p><div class="form-choice-grid">${removals||'<p>No inherited purchases.</p>'}</div></details><details><summary>Equipment retained in this form</summary><div class="form-choice-grid">${inheritedEquipment||'<p>No inherited equipment.</p>'}</div></details><h4>Form stats and size</h4><div class="follower-grid">${Object.entries(state.stats).map(([name,grade])=>`<label>${esc(name)} (base ${esc(grade)})<select class="no-enhance" data-form-field="stat" data-stat-name="${name}" data-form-id="${id}">${STAT_ORDER.filter(g=>g!=='S'&&statIndex(g)>=statIndex(grade)).map(g=>`<option ${g===b.effective.stats[name]?'selected':''}>${g}</option>`).join('')}</select></label>`).join('')}<label>Form Size<select class="no-enhance" data-form-field="size" data-form-id="${id}">${['diminutive','tiny','small','medium','large','huge','gargantuan'].map(size=>`<option ${size===b.effective.origin.size?'selected':''}>${size}</option>`).join('')}</select><small>Different size requires Size Change of sufficient grade. No size points are gained or lost.</small></label></div><h4>Form purchases and upgrades</h4><div class="form-add-skill"><label>Skill / feature<select class="no-enhance" id="formSkill-${id}">${skillOptions}</select></label><button class="ui-btn" type="button" data-form-edit="skills" data-form-id="${id}">Add skill / feature</button></div><div class="row-actions">${[['techniques','Technique'],['affinities','Affinity'],['equipment','Equipment'],['abilities','Ability']].map(([kind,label])=>`<button type="button" class="ui-btn small" data-form-edit="${kind}" data-form-id="${id}">+ ${label}</button>`).join('')}</div>${rows}<details><summary>Form spending and refunds</summary><ul>${b.refundRows.map(r=>`<li>Refund: ${esc(r.name)} +${r.cost}</li>`).join('')}${b.purchaseRows.map(r=>`<li>Purchase / upgrade: ${esc(r.name)} −${r.cost}</li>`).join('')}</ul></details>${b.errors.length?`<div class="rule-callout status-bad"><strong>Form checks</strong><ul>${b.errors.map(e=>`<li>${esc(e)}</li>`).join('')}</ul></div>`:'<div class="rule-callout status-good">Form purchase checks passed.</div>'}<label>Notes<textarea rows="3" data-grant-field="notes" data-grant-skill="${id}">${esc(g.notes||'')}</textarea></label></section>`;
+}
+function handleTransformationField(){
+  const el=$(this),id=String(el.data('form-id')),grant=state.skillGrants[id];if(!grant)return;const f=FORM.normalize(grant),kind=el.data('form-field'),value=el.val();
+  if(kind==='removed'){f.removedRefs=f.removedRefs.filter(r=>r!==value);if(el.is(':checked'))f.removedRefs.push(value)}
+  if(kind==='equipment'){if(f.retainedEquipmentIds===null)f.retainedEquipmentIds=state.equipment.filter(r=>equipmentDefs(r).some(t=>t.natural)).map(r=>r.id);f.retainedEquipmentIds=f.retainedEquipmentIds.filter(r=>r!==value);if(el.is(':checked'))f.retainedEquipmentIds.push(value)}
+  if(kind==='stat')f.stats[el.data('stat-name')]=value;
+  if(kind==='size')f.size=value;
+  grant.form=f;renderSkillGrants();refreshSummary();renderReview(false);
+}
+function openTransformationEntry(){
+  const el=$(this),id=String(el.data('form-id')),kind=el.data('form-edit'),entry=el.data('entry-id'),base=state,grant=base.skillGrants[id];if(!grant)return;
+  const name=kind==='skills'&&!entry?$('#formSkill-'+id).val():'';
+  transformationEditor={base,id,saving:false};state=FORM.build(base,grant);
+  try{if(kind==='skills')editSkill(entry||null,name);else if(kind==='techniques')editTechnique(entry);else if(kind==='affinities')editAffinity(entry);else if(kind==='equipment')editEquipment(entry);else if(kind==='abilities')editAbility(entry);if(!$modal[0].open)restoreTransformationEditor(false)}catch(error){restoreTransformationEditor(false);throw error}
+}
+function restoreTransformationEditor(save){
+  const context=transformationEditor;if(!context)return;
+  if(save){const grant=context.base.skillGrants[context.id];grant.form=FORM.capture(context.base,state,grant)}
+  state=context.base;transformationEditor=null;
+}
+function deleteTransformationEntry(){const el=$(this),id=String(el.data('form-id')),kind=el.data('form-delete'),entry=el.data('entry-id'),grant=state.skillGrants[id];if(!grant||!FORM.collections.includes(kind))return;const f=FORM.normalize(grant);f.added[kind]=f.added[kind].filter(r=>r.id!==entry);grant.form=f;renderAll()}
+function transformationSheet(skill){
+  const base=state,g=base.skillGrants?.[skill.id]||{},b=transformationBuild(skill),lines=[`${g.name||'Unnamed form'} [Transformation ${skill.grade}; self only; F duration 1 post]`,g.details||'',`Form points: ${b.baseBudget} base + ${b.refunds} refunded = ${b.budget}; ${b.spent} spent; ${b.remaining} remaining.`,`Size: ${b.effective.origin.size}. Titles inherited from base character.`];
+  lines.push('Disabled / refunded: '+(b.form.removedRefs.map(ref=>formCosts(base,skill.id).find(r=>r.ref===ref)?.name||ref).join('; ')||'none'));
+  const melded=base.equipment.filter(r=>!b.effective.equipment.some(e=>e.id===r.id));lines.push('Melded equipment (unavailable): '+(melded.map(r=>r.name).join('; ')||'none'));
+  withCharacter(b.effective,()=>{lines.push('Stats: '+Object.entries(state.stats).map(([k,v])=>k+' '+v).join(', '));if(state.identity.features)lines.push('Features: '+state.identity.features);const free=freeSkillDisplay();if(free)lines.push('Free origin skill: '+free.name+' '+free.grade);lines.push('Skills:');acquiredSkills().forEach(r=>lines.push(`${skillDisplayName(r)} ${r.grade}${r.specialized?' [Specialized]':''}${limiterTotal(r)?' — Limiters: '+(r.limiters||[]).map(l=>l.type+' '+l.rank+(l.detail?' ['+l.detail+']':'')).join(', '):''}${skillRuleSummary(r)?' — '+skillRuleSummary(r):''}${r.notes?' — '+r.notes:''}`));state.techniques.forEach(r=>lines.push(`Technique: ${techniqueDisplayName(r)} ${techniqueGrade(r)} [${r.core}; ${skillDisplayName(state.skills.find(s=>s.id===r.styleId)||{name:'Missing style'})}]`));state.affinities.forEach(r=>lines.push(`Affinity: ${affinityDisplayName(r)} ${r.grade} [${r.core}]`));state.customRows.forEach(r=>lines.push(`${r.section}: ${r.name} ${r.grade||''}`));state.equipment.forEach(r=>lines.push(`Equipment: ${r.name} ${r.grade}`));state.abilities.forEach(r=>{const c=abilityCalc(r);lines.push(`Ability: ${r.name} — ${c.pool.map(p=>p.label+' '+p.grade).join(', ')} — ${c.grade}; ${c.cooldown??'?'} post cooldown; ${c.actions} actions${r.description?' — '+r.description:''}${r.notes?' — '+r.notes:''}`)})});
+  if(g.notes)lines.push('Notes: '+g.notes);return lines.filter(Boolean).join('\n');
+}
 function grantBudget(skill){return (gradeIndex(skill?.grade||'F')+1)*(skill?.name==='Item'?35:28)}
 function syncSkillGrants(){
   state.skillGrants=(state.skillGrants&&typeof state.skillGrants==='object')?state.skillGrants:{};
@@ -555,9 +641,11 @@ function syncSkillGrants(){
   if(!active&&$('[data-panel="grants"]').hasClass('active'))showStep('skills');
 }
 function renderSkillGrants(){
+  const expanded=$('#skillGrantWorkspace details').map((i,el)=>el.open?i:null).get();
   const rows=grantSkillRows();
-  const html=rows.map(skill=>{const g=state.skillGrants?.[skill.id]||{},budget=grantBudget(skill),isItem=skill.name==='Item';return `<section class="follower-section grant-section"><div class="follower-section-head"><div><h3>${isItem?'Bound Item':'Transformation Form'} <span class="pill">${skill.grade}</span></h3><div class="muted">${isItem?'Item grants a bound object with its own special build.':'Transformation grants a fixed alternate form. Different forms require separate Transformation purchases.'}</div></div><span class="follower-budget">${budget} build pts</span></div><div class="follower-card"><div class="follower-grid"><label>${isItem?'Item Name':'Form Name'}<input data-grant-field="name" data-grant-skill="${skill.id}" value="${esc(g.name||'')}" placeholder="${isItem?'Bound grimoire, living armor, arcane prosthetic...':'Elemental form, beast form, ghost form...'}"></label><label class="wide">${isItem?'Item Build / Granted Abilities':'Form Build / Changes'}<textarea rows="8" data-grant-field="details" data-grant-skill="${skill.id}" placeholder="You have ${budget} internal build points. Record the stats, skills, abilities, features, equipment behavior, or other approved content bought with them.">${esc(g.details||'')}</textarea></label><label class="wide">Notes<textarea rows="3" data-grant-field="notes" data-grant-skill="${skill.id}" placeholder="Restrictions, appearance, activation, approval notes...">${esc(g.notes||'')}</textarea></label></div></div><div class="rule-callout">${isItem?`This Item ${skill.grade} provides ${budget} points for its internal build. Those points do not enter the parent character's creation budget.`:`Transformation ${skill.grade} provides ${budget} points to customize the fixed form. The form keeps the character's existing titles, stats, skills, and abilities unless a limitation of the form prevents their use.`}</div></section>`}).join('');
+  const html=rows.map(skill=>{if(skill.name==='Transformation')return renderTransformation(skill);const g=state.skillGrants?.[skill.id]||{},budget=grantBudget(skill),isItem=skill.name==='Item';return `<section class="follower-section grant-section"><div class="follower-section-head"><div><h3>${isItem?'Bound Item':'Transformation Form'} <span class="pill">${skill.grade}</span></h3><div class="muted">${isItem?'Item grants a bound object with its own special build.':'Transformation grants a fixed alternate form. Different forms require separate Transformation purchases.'}</div></div><span class="follower-budget">${budget} build pts</span></div><div class="follower-card"><div class="follower-grid"><label>${isItem?'Item Name':'Form Name'}<input data-grant-field="name" data-grant-skill="${skill.id}" value="${esc(g.name||'')}" placeholder="${isItem?'Bound grimoire, living armor, arcane prosthetic...':'Elemental form, beast form, ghost form...'}"></label><label class="wide">${isItem?'Item Build / Granted Abilities':'Form Build / Changes'}<textarea rows="8" data-grant-field="details" data-grant-skill="${skill.id}" placeholder="You have ${budget} internal build points. Record the stats, skills, abilities, features, equipment behavior, or other approved content bought with them.">${esc(g.details||'')}</textarea></label><label class="wide">Notes<textarea rows="3" data-grant-field="notes" data-grant-skill="${skill.id}" placeholder="Restrictions, appearance, activation, approval notes...">${esc(g.notes||'')}</textarea></label></div></div><div class="rule-callout">${isItem?`This Item ${skill.grade} provides ${budget} points for its internal build. Those points do not enter the parent character's creation budget.`:`Transformation ${skill.grade} provides ${budget} points to customize the fixed form. The form keeps the character's existing titles, stats, skills, and abilities unless a limitation of the form prevents their use.`}</div></section>`}).join('');
   $('#skillGrantWorkspace').html(html||'<div class="rule-callout">Add Item or Transformation to open its granted-build workspace.</div>');
+  $('#skillGrantWorkspace details').each((i,el)=>{el.open=expanded.includes(i)});
 }
 function handleSkillGrantField(){const $el=$(this),id=String($el.data('grant-skill')),field=$el.data('grant-field');if(!state.skillGrants?.[id])return;state.skillGrants[id][field]=$el.val();renderReview(false);renderCrafting()}
 function renderCrafting(){
@@ -785,7 +873,8 @@ function validation(){
   if(state.origin.tree==='monster')warnings.push('Monster tree is a hard-mode antagonist path and is discouraged for new players.');
   if(!state.abilities.length)warnings.push('No abilities are set up. A finished character sheet should include at least one ability.');
   state.abilities.forEach(r=>{const c=abilityCalc(r);if(c.actions>3)warnings.push(`${r.name} is estimated at ${c.actions} actions and would not fit the standard 3-action Advanced Rules combat post without an override.`)});
-  grantSkillRows().forEach(skill=>{const g=state.skillGrants?.[skill.id]||{};if(!String(g.name||'').trim())errors.push(`${skill.name} ${skill.grade}: define the ${skill.name==='Item'?'bound item':'transformation form'} name in Skill Grants.`);if(!String(g.details||'').trim())warnings.push(`${skill.name} ${skill.grade}: no granted build/details have been recorded yet.`)});
+  grantSkillRows().filter(skill=>skill.name==='Transformation').forEach(skill=>{const check=transformationCheck(skill);errors.push(...check.errors.map(e=>`${skillGrantName(skill)}: ${e}`));warnings.push(...check.warnings.map(e=>`${skillGrantName(skill)}: ${e}`))});
+  grantSkillRows().forEach(skill=>{const g=state.skillGrants?.[skill.id]||{};if(!String(g.name||'').trim())errors.push(`${skill.name} ${skill.grade}: define the ${skill.name==='Item'?'bound item':'transformation form'} name in Skill Grants.`);if(!String(g.details||'').trim())warnings.push(`${skill.name} ${skill.grade}: no ${skill.name==='Transformation'?'form appearance':'granted build/details'} has been recorded yet.`)});
   state.classes.filter(c=>c.override).forEach(c=>{if(!String(c.overrideReason||'').trim())errors.push(`${c.name} class equivalency needs a written explanation.`);else warnings.push(`${c.name} was acquired using an equivalent/custom override: ${c.overrideReason}`)});
   const tamer=state.skills.find(x=>x.name==='Tamer');if(tamer&&state.followers?.buddy&&!String(state.followers.buddy.movement||'').trim())warnings.push('Tamer buddy has no primary movement recorded.');
   followerSkillRows('Minions').forEach(skill=>{const m=state.followers.minions?.[skill.id];if(m&&(Number(m.pointsUsed)||0)>(M.followerRules?.minions?.templatePoints||56))errors.push(`${m.name||'Minion template'} documents more than 56 points.`)});
@@ -841,6 +930,7 @@ function generateSheet(){
   state.assets.forEach(r=>lines.push(`${r.name} F Asset: ${assetCost(r)} points.`));
   state.customRows.forEach(r=>lines.push(`${r.name}${r.grade?' '+r.grade:''} (${r.section} override): ${Number(r.cost)||0} points.`));
   lines.push(`Total spent: ${totalSpent()} points.`);
+  state.skills.filter(s=>s.name==='Transformation').forEach(skill=>{lines.push('','=== TRANSFORMATION FORM ===',transformationSheet(skill))});
   return lines.join('\n');
 }
 function copySheet(){const t=$('#sheetOutput').val()||generateSheet();$('#sheetOutput').val(t);navigator.clipboard?.writeText(t).then(()=>flashButton($('#btnCopySheet'),'Copied')).catch(()=>{const el=$('#sheetOutput')[0];el.select();document.execCommand('copy');flashButton($('#btnCopySheet'),'Copied')})}
@@ -862,12 +952,12 @@ function mergeState(o){
   const abilities=(Array.isArray(o.abilities)?o.abilities:[]).map(a=>({...a,components:Array.isArray(a.components)?a.components:[]}));
   const followers={...d.followers,...(o.followers||{}),minions:{...(o.followers?.minions||{})},companions:{...(o.followers?.companions||{})}};
   const classes=(Array.isArray(o.classes)?o.classes:[]).map(c=>({...c,overrideReason:c.overrideReason||''}));
-  return {...d,...o,schema:7,earnedPoints,appVersion:M.version,identity,origin,stats:{...d.stats,...(o.stats||{})},skills,techniques,affinities,equipment,switchLinks:Array.isArray(o.switchLinks)?o.switchLinks:[],assets,abilities,titles:Array.isArray(o.titles)?o.titles:[],criminalTitles:Array.isArray(o.criminalTitles)?o.criminalTitles:[],classes,customRows:Array.isArray(o.customRows)?o.customRows:[],skillGrants:(o.skillGrants&&typeof o.skillGrants==='object')?o.skillGrants:{},followers,ui:{...d.ui,...(o.ui||{}),ambient:false}};
+  return {...d,...o,schema:8,earnedPoints,appVersion:M.version,identity,origin,stats:{...d.stats,...(o.stats||{})},skills,techniques,affinities,equipment,switchLinks:Array.isArray(o.switchLinks)?o.switchLinks:[],assets,abilities,titles:Array.isArray(o.titles)?o.titles:[],criminalTitles:Array.isArray(o.criminalTitles)?o.criminalTitles:[],classes,customRows:Array.isArray(o.customRows)?o.customRows:[],skillGrants:(o.skillGrants&&typeof o.skillGrants==='object')?o.skillGrants:{},followers,ui:{...d.ui,...(o.ui||{}),ambient:false}};
 }
 function saveLocal(show){localStorage.setItem('ih-character-builder-save',JSON.stringify(state));if(show)flashButton($('#btnSaveLocal'),'Saved')}
 function loadLocalIfPresent(promptUser){try{const raw=localStorage.getItem('ih-character-builder-save');if(raw&&(!promptUser||confirm('Load saved character?')))state=mergeState(JSON.parse(raw))}catch(_){}}
-function openModal(title,body,onSave){$('#modalTitle').text(title);$('#modalBody').off('.equipment').html(body);modalSaveHandler=onSave;$modal[0].showModal();setTimeout(refreshFancySelects,0)}
-function closeModal(){modalSaveHandler=null;$modal[0].close()}
+function openModal(title,body,onSave){$('#modalTitle').text(transformationEditor?'Form: '+title:title);$('#modalBody').off('.equipment').html(body);modalSaveHandler=transformationEditor?()=>{transformationEditor.saving=true;try{onSave()}finally{if(transformationEditor)transformationEditor.saving=false}}:onSave;$modal[0].showModal();setTimeout(refreshFancySelects,0)}
+function closeModal(){if(transformationEditor)restoreTransformationEditor(transformationEditor.saving);modalSaveHandler=null;$modal[0].close()}
 
 $(init);
 })(jQuery);

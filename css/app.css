@@ -798,3 +798,6 @@ select option:hover { background: #4f1720; color: #fff5e7; }
 .form-add-skill label { flex:1 1 240px; min-width:0; }
 .grant-section .selected-row { overflow-wrap:anywhere; }
 @media(max-width:600px) { .form-add-skill .ui-btn { width:100%; } .grant-section .row-actions { flex-wrap:wrap; } }
+
+.grant-section summary { cursor:var(--cursor-action); padding:8px 10px; border:1px solid transparent; transition:background .14s ease,border-color .14s ease,box-shadow .14s ease; }
+.grant-section summary:hover,.grant-section summary:focus-visible { border-color:var(--gold); background:linear-gradient(180deg,rgba(116,33,40,.96),rgba(48,13,17,.98)); box-shadow:0 0 14px rgba(212,186,115,.14),inset 3px 0 var(--teal); outline:none; }

@@ -1,10 +1,10 @@
-# IH builder — remaining issues after v0.12.0
+# IH builder — remaining issues after v0.12.1
 
-Updated 2026-11-07. Numbers remain stable for follow-up requests; completed #21 is removed below.
+Updated 2026-11-08. Numbers remain stable for follow-up requests; completed #21 is removed below.
 
 ## Completed
 
-- **#21 Transformation builder:** structured inherited removals, actual-paid refunds, separate form purchases/upgrades, stats, equipment melding/retention, size checks, dependencies, form abilities and sheet/export support. Narrative justification for removals is assumed per the user.
+- **#21 Transformation builder:** structured inherited removals, actual-paid refunds, separate form purchases/upgrades, stats, equipment melding/retention, dependencies, form abilities and sheet/export support. Narrative justification for removals is assumed per the user.
 
 ### Earlier completions
 
@@ -64,6 +64,8 @@ Updated 2026-11-07. Numbers remain stable for follow-up requests; completed #21 
 
 ## Verification
 
-43 automated regression tests pass. Browser checks cover Educated selection/upgrades/export, safe Profession names, earned totals/Standing, and phone-width forms. Image verification covered all 110 races and 202 assigned public images. The three approved paired illustrations are installed; all 205 assigned assets exist and decode locally.
+44 automated regression tests pass. Browser checks cover Educated selection/upgrades/export, safe Profession names, earned totals/Standing, and phone-width forms. Image verification covered all 110 races and 202 assigned public images. The three approved paired illustrations are installed; all 205 assigned assets exist and decode locally.
 
 A final additional browser file-import check could not execute because automatic approval review reached its usage limit. Local migration and upgrade-accounting regression tests passed.
+
+The prior phone-save browser automation limitation is resolved: v0.12.1 phone-width form editing/saving and regenerated-sheet checks passed on 2026-11-08, without browser errors.

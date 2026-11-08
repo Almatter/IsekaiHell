@@ -52,3 +52,10 @@ The tutorial warns users that it takes about 10–15 minutes and that progress i
 Transformation now has a structured form builder in Skill Grants. Disable inherited skills/features/abilities, receive actual-paid skill refunds, purchase or upgrade form skills/techniques/affinities/equipment, improve form stats, and compose form abilities. Worn equipment melds by default; retained items and natural equipment remain usable. Size changes require usable Size Change of sufficient grade and never change the point pool. Forms cannot purchase Transformation.
 
 All form changes stay separate from the base character and from other forms. Save/export preserves structured form data (schema 8), and the character sheet includes each form's complete skills, stats, abilities, equipment and accounting. Existing free-text form descriptions are preserved. Removal narrative justification is assumed; no extra approval field is required.
+
+### v0.12.1
+
+- Transformation disclosure headers use the interactive cursor, hover/focus styling and interface sounds.
+- Transformation no longer selects, validates or exports a form size. Size changes belong to the containing ability. Legacy form-size selections are ignored.
+- Sheets put form details immediately beneath Transformation: explicit stat changes/costs, gained/lost/modified entries, equipment and separate character/form point balances. Remove the earned-points note and the parenthetical on melded equipment.
+- Review and Copy regenerate the current sheet instead of preserving stale output.

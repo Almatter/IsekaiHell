@@ -5,7 +5,7 @@ const collections=['skills','techniques','affinities','equipment','abilities','c
 const clone=value=>JSON.parse(JSON.stringify(value));
 const ref=(kind,row)=>kind+':'+row.id;
 function normalize(grant={}){
-  const f=grant.form||{},out={version:1,stats:{...(f.stats||{})},size:f.size||'',removedRefs:[...new Set(Array.isArray(f.removedRefs)?f.removedRefs:[])],retainedEquipmentIds:Array.isArray(f.retainedEquipmentIds)?[...new Set(f.retainedEquipmentIds)]:null,added:{},updated:{}};
+  const f=grant.form||{},out={version:1,stats:{...(f.stats||{})},removedRefs:[...new Set(Array.isArray(f.removedRefs)?f.removedRefs:[])],retainedEquipmentIds:Array.isArray(f.retainedEquipmentIds)?[...new Set(f.retainedEquipmentIds)]:null,added:{},updated:{}};
   for(const key of collections){out.added[key]=Array.isArray(f.added?.[key])?clone(f.added[key]):[];out.updated[key]=Array.isArray(f.updated?.[key])?clone(f.updated[key]):[]}
   return out;
 }
@@ -16,7 +16,7 @@ function build(base,grant){
     const updates=new Map(f.updated[key].map(r=>[r.id,r]));
     out[key]=base[key].filter(r=>!removed.has(ref(key,r))&&(key!=='equipment'||(f.retainedEquipmentIds===null?r.types?.some(t=>t.startsWith('natural-')):f.retainedEquipmentIds.includes(r.id)))).map(r=>clone({...r,...(updates.get(r.id)||{})})).concat(clone(f.added[key]));
   }
-  out.stats={...out.stats,...f.stats};out.origin.size=f.size||base.origin.size;
+  out.stats={...out.stats,...f.stats};
   out.identity.features=features(base).filter(r=>!removed.has(r.ref)).map(r=>r.name).join('; ');
   out.formDisabledGrantIds=f.removedRefs.filter(r=>r.startsWith('skills:educated:')).map(r=>r.slice(7));
   out.formDisableOriginSkill=removed.has('origin-free');

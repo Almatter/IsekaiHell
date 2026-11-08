@@ -1,5 +1,5 @@
 window.IH_META = {
-  version: "0.11.1",
+  version: "0.11.2",
   rulesSnapshot: "2026-11-07 (partial audit corrections)",
   grades: ["H","G","F","E","D","C","B","A","S"],
   skillGrades: ["F","E","D","C","B","A"],

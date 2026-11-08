@@ -1,22 +1,19 @@
 # Race image audit — 2026-11-07
 
-Audited all 110 race records and 202 assigned race images.
+The original audit covered 110 races and 202 assigned images: all files existed, decoded locally and loaded from public GitHub Pages URLs. No broken assigned URL was reproduced. Diwose, Zentail and Zentox had no artwork assigned.
 
-- All 202 assigned files exist with exact tracked path/case matches.
-- All 202 decode locally with Pillow; none are tiny placeholders or fully transparent.
-- All 202 public GitHub Pages image URLs loaded successfully in the browser.
-- Three races have no image assigned: **Diwose** (Prime / Intermediate), **Zentail** (Fae / Mundane), and **Zentox** (Fae / Intermediate).
+## Approved artwork installed in v0.11.2
 
-There were no reproducible broken assigned image URLs in this audit. The three absent images are missing artwork, rather than corrupt files. A browser/network failure can still cause an otherwise valid image not to display.
+The user approved the revised male/female illustrations on 2026-11-07. They were converted to WebP and assigned through the same catalog image field as existing artwork:
 
-Approval drafts were generated with the built-in image-generation tool, based on each race's description in data/races.js. They are kept outside the repository and are not installed on the live website:
+- Diwose: assets/races/prime-intermediate-diwose-1.webp
+- Zentail: assets/races/fae-mundane-zentail-1.webp
+- Zentox: assets/races/fae-intermediate-zentox-1.webp
 
-- Diwose: C:/Users/novam/.codex/visualizations/2026/11/07/01a1b6fc-4467-7380-9934-e253b3291f6f/race-art-proposals/diwose.png
-- Zentail: C:/Users/novam/.codex/visualizations/2026/11/07/01a1b6fc-4467-7380-9934-e253b3291f6f/race-art-proposals/zentail.png
-- Zentox: C:/Users/novam/.codex/visualizations/2026/11/07/01a1b6fc-4467-7380-9934-e253b3291f6f/race-art-proposals/zentox.png
-
-Review the anatomy, eyes, adult appearance, and species interpretation before approval. In particular, the Diwose draft depicts a shared body with adjacent fused heads; this interpretation should be confirmed by the setting author.
+All three show male and female adult examples on simple textureless gray backgrounds. They appear in both the race catalog and character builder. All 110 races now have assigned images, totaling 205 locally verified assets.
 
 ## Artwork standard
 
-All new or replacement race images must show male and female adult examples together, with a simple textureless background (or transparency). Existing assigned artwork has not been regenerated. The three missing-race drafts are being revised to this standard and remain pending approval.
+All new or replacement race images must show male and female adult examples together, with a simple textureless background or transparency. Existing assigned artwork has not been regenerated.
+
+Generated with the built-in image_gen tool. Approved originals and exact prompts remain in the local race-art-proposals folder (paired-prompts.json).

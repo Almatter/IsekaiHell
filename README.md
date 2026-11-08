@@ -41,3 +41,8 @@ The tutorial warns users that it takes about 10–15 minutes and that progress i
 - Educated grants waive individual prerequisites; Educated retains its own Character requirement and required choice details.
 - Ineligible skills no longer show limiter controls; imported invalid limiters remain flagged until edited.
 - Race artwork standard: male and female adult examples together on a plain textureless background. Revised missing-race drafts remain pending approval.
+
+### v0.11.2
+
+- Install approved Diwose, Zentail and Zentox paired race illustrations as WebP assets in both catalog and builder.
+- Refresh the remaining-issues list: bugs first, then validations, missing features and rules requiring clarification.
